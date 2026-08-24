@@ -1,0 +1,89 @@
+# ============================================================
+# AI Job Hunter — Docker Compose
+# ============================================================
+# Usage:
+#   docker compose up -d         # Start all services
+#   docker compose logs -f       # View logs
+#   docker compose down          # Stop (preserves database)
+#   docker compose down -v       # Stop and delete database
+# ============================================================
+
+services:
+
+  # ────────────────────────────────────────────────────────────
+  # PostgreSQL database
+  # ────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: jobhunter-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: jobhunter
+      POSTGRES_PASSWORD: jobhunter
+      POSTGRES_DB: jobhunter
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jobhunter -d jobhunter"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - jobhunter-net
+
+  # ────────────────────────────────────────────────────────────
+  # Job Hunter API
+  # ────────────────────────────────────────────────────────────
+  job-hunter-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: jobhunter-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      # Override DATABASE_URL to use Docker service name
+      DATABASE_URL: postgresql+asyncpg://jobhunter:jobhunter@postgres:5432/jobhunter
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro    # live config — editable without restart
+      - uploads_data:/app/uploads            # resume uploads
+      - logs_data:/app/logs                  # application logs
+      - email_output:/app/email_output       # test email output
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - jobhunter-net
+
+# ────────────────────────────────────────────────────────────
+# Volumes
+# ────────────────────────────────────────────────────────────
+volumes:
+  postgres_data:
+    driver: local
+  uploads_data:
+    driver: local
+  logs_data:
+    driver: local
+  email_output:
+    driver: local
+
+# ────────────────────────────────────────────────────────────
+# Networks
+# ────────────────────────────────────────────────────────────
+networks:
+  jobhunter-net:
+    driver: bridge

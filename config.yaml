@@ -1,0 +1,237 @@
+# ============================================================
+# AI Job Hunter — Job Preferences Configuration
+# Edit this file to change what jobs you want to find.
+# No restart needed — preferences are reloaded each search run.
+# ============================================================
+
+job_preferences:
+
+  # Job titles to search for
+  job_titles:
+    - DevOps Engineer
+    - DevOps Cloud Engineer
+    - Cloud Engineer
+    - Site Reliability Engineer
+    - SRE
+    - Platform Engineer
+    - Cloud DevOps Engineer
+    - Infrastructure Engineer
+
+  # Experience requirements
+  experience:
+    minimum_years: 1
+    maximum_years: 3
+
+  # Acceptable locations
+  locations:
+    - India
+    - Remote India
+    - Remote
+    - Bangalore
+    - Hyderabad
+    - Pune
+    - Chennai
+    - Mumbai
+
+  # Acceptable work modes
+  work_mode:
+    - Remote
+    - Work From Home
+    - Hybrid
+
+  # Minimum salary in INR (10 LPA = 1,000,000 INR)
+  minimum_salary_inr: 1000000
+
+  # Employment types
+  employment_types:
+    - Full-time
+
+  # Skills you have — used for matching
+  preferred_skills:
+    - GCP
+    - Google Cloud
+    - GKE
+    - Kubernetes
+    - Docker
+    - Terraform
+    - Terraform Cloud
+    - GitLab CI/CD
+    - Jenkins
+    - Jenkins Shared Libraries
+    - Argo CD
+    - ArgoCD
+    - Helm
+    - Git
+    - Linux
+    - Python
+    - Java
+    - Dynatrace
+    - Google Cloud Monitoring
+    - CI/CD
+    - Infrastructure as Code
+    - IaC
+    - Cloud Run
+    - Prometheus
+    - Grafana
+    - Ansible
+    - Bash
+    - Shell scripting
+
+  # Job titles to exclude (senior/leadership roles)
+  exclude_titles:
+    - Senior DevOps Engineer
+    - Lead DevOps Engineer
+    - Principal DevOps Engineer
+    - Staff DevOps Engineer
+    - Manager
+    - Director
+    - Architect
+    - VP
+    - Head of
+    - Senior SRE
+    - Lead SRE
+
+  # Keywords that should appear in job descriptions (any of these)
+  required_keywords: []
+
+  # Keywords that disqualify a job if found
+  exclude_keywords:
+    - "10+ years"
+    - "15+ years"
+    - "8+ years"
+
+# ============================================================
+# Search Settings
+# ============================================================
+
+search_settings:
+  # How many days back to look for jobs (per source)
+  max_job_age_days: 7
+
+  # Maximum jobs to process per search run (per source)
+  max_jobs_per_source: 50
+
+  # Request timeout in seconds
+  request_timeout_seconds: 30
+
+  # Delay between source requests (politeness)
+  request_delay_seconds: 2
+
+  # Minimum match score to email (0-100)
+  min_match_score: 70
+
+  # Country codes for job board APIs
+  country_codes:
+    - in      # India
+    - gb      # UK (for remote roles posted globally)
+    - us      # US (for remote roles posted globally)
+
+# ============================================================
+# Company Career Pages to Monitor
+# Add any company whose DevOps/SRE jobs you want to track
+# ============================================================
+
+company_career_pages:
+  - name: Google India
+    url: https://careers.google.com/jobs/results/?location=India&q=devops+OR+sre+OR+platform+engineer
+    type: google_careers
+
+  - name: Microsoft India
+    url: https://jobs.microsoft.com/en-us/search?q=devops+OR+sre&l=India
+    type: microsoft_careers
+
+  - name: Amazon/AWS India
+    url: https://www.amazon.jobs/en/search?base_query=devops+OR+sre+OR+cloud+engineer&loc_query=India
+    type: amazon_careers
+
+  - name: Infosys
+    url: https://career.infosys.com/joblist
+    type: generic
+
+  - name: Wipro
+    url: https://careers.wipro.com/careers-home/jobs?stretch=10&stretchUnit=MILES&q=devops+cloud
+    type: generic
+
+# ============================================================
+# Skill Synonyms — for intelligent matching
+# The matcher understands these as equivalent
+# ============================================================
+
+skill_synonyms:
+  kubernetes:
+    - Kubernetes
+    - K8s
+    - GKE
+    - EKS
+    - AKS
+    - Google Kubernetes Engine
+    - Elastic Kubernetes Service
+    - Azure Kubernetes Service
+    - container orchestration
+
+  terraform:
+    - Terraform
+    - Terraform Cloud
+    - Infrastructure as Code
+    - IaC
+    - HCL
+    - OpenTofu
+
+  gcp:
+    - GCP
+    - Google Cloud
+    - Google Cloud Platform
+    - GKE
+    - Cloud Run
+    - BigQuery
+    - Cloud Storage
+    - GCS
+
+  cicd:
+    - CI/CD
+    - Continuous Integration
+    - Continuous Deployment
+    - GitLab CI/CD
+    - GitHub Actions
+    - Jenkins
+    - CircleCI
+    - Pipeline
+    - DevOps pipeline
+
+  docker:
+    - Docker
+    - Docker Compose
+    - Containerization
+    - Container
+    - OCI
+    - Podman
+
+  monitoring:
+    - Monitoring
+    - Observability
+    - Dynatrace
+    - Prometheus
+    - Grafana
+    - Google Cloud Monitoring
+    - Stackdriver
+    - DataDog
+    - New Relic
+
+  gitops:
+    - GitOps
+    - Argo CD
+    - ArgoCD
+    - Flux
+    - Helm
+    - Helmfile
+
+  linux:
+    - Linux
+    - Unix
+    - RHEL
+    - Ubuntu
+    - CentOS
+    - Debian
+    - Bash
+    - Shell
+    - Shell scripting

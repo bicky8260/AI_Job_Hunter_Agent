@@ -1,0 +1,113 @@
+Subject: [AI Job Hunter] 7 New DevOps Jobs Found — 23 Aug 2026
+
+============================================================
+AI JOB HUNTER — Daily Job Report
+Date: 23 Aug 2026
+============================================================
+
+Found: 141 | Matched: 7 | Rejected: 20
+
+1. Associate DevOps Engineer
+   Company:    Umanist Staffing LLC
+   Location:   India
+   Work Mode:  None
+   Experience: None
+   Salary:     None
+   Match:      79/100 (Good Match)
+   Skills:     GCP, Google Cloud, GKE, Kubernetes, Docker, Terraform
+   Why this matches:
+     - Partial title match: 'Associate DevOps Engineer' ≈ 'devops engineer'
+     - Matched 9/10 required skills: GCP, Google Cloud, GKE, Kubernetes, Docker
+     - Missing: Jenkins Shared Libraries
+   Apply:      https://www.adzuna.in/details/5853166699?utm_medium=api&utm_source=2ace800f
+
+2. Devops Engineer
+   Company:    TalkingLands
+   Location:   Bangalore, Karnataka
+   Work Mode:  None
+   Experience: None
+   Salary:     None
+   Match:      79/100 (Good Match)
+   Skills:     GCP, Google Cloud, GKE, Kubernetes, Docker, Terraform
+   Why this matches:
+     - Exact title match: 'Devops Engineer'
+     - Matched 9/10 required skills: GCP, Google Cloud, GKE, Kubernetes, Docker
+     - Missing: Jenkins Shared Libraries
+   Apply:      https://www.adzuna.in/details/5852720612?utm_medium=api&utm_source=2ace800f
+
+3. DevOps / Platform Engineer (m/f/d)
+   Company:    Objectway
+   Location:   EBERSBERG
+   Work Mode:  Hybrid
+   Experience: None
+   Salary:     None
+   Match:      78/100 (Good Match)
+   Skills:     sw architecture
+   Why this matches:
+     - Partial title match: 'DevOps / Platform Engineer (m/f/d)' ≈ 'platform engineer'
+     - Matched 1/1 required skills: sw architecture
+     - Experience not specified — awarding partial score
+   Apply:      https://www.arbeitnow.com/jobs/companies/objectway/devops-platform-engineer-ebersberg-47308
+
+4. DevOps Engineer
+   Company:    Accenture
+   Location:   India
+   Work Mode:  None
+   Experience: None
+   Salary:     None
+   Match:      77/100 (Good Match)
+   Skills:     GCP, Google Cloud, GKE, Kubernetes, Docker, Terraform
+   Why this matches:
+     - Exact title match: 'DevOps Engineer'
+     - Matched 9/10 required skills: GCP, Google Cloud, GKE, Kubernetes, Docker
+     - Missing: Jenkins Shared Libraries
+   Apply:      https://www.adzuna.in/details/5852609942?utm_medium=api&utm_source=2ace800f
+
+5. AD, Platform Engineering
+   Company:    OSTTRA
+   Location:   India
+   Work Mode:  None
+   Experience: None
+   Salary:     None
+   Match:      72/100 (Good Match)
+   Skills:     GCP, Google Cloud, GKE, Kubernetes, Docker, Terraform
+   Why this matches:
+     - Partial title match: 'AD, Platform Engineering' ≈ 'platform engineer'
+     - Matched 9/10 required skills: GCP, Google Cloud, GKE, Kubernetes, Docker
+     - Missing: Jenkins Shared Libraries
+   Apply:      https://www.adzuna.in/details/5852577981?utm_medium=api&utm_source=2ace800f
+
+6. DevOps Engineer
+   Company:    Gradera
+   Location:   Hyderabad, Telangana
+   Work Mode:  None
+   Experience: None
+   Salary:     None
+   Match:      71/100 (Good Match)
+   Skills:     GCP, Google Cloud, GKE, Kubernetes, Docker, Terraform
+   Why this matches:
+     - Exact title match: 'DevOps Engineer'
+     - Matched 9/10 required skills: GCP, Google Cloud, GKE, Kubernetes, Docker
+     - Missing: Jenkins Shared Libraries
+   Apply:      https://www.adzuna.in/details/5852590186?utm_medium=api&utm_source=2ace800f
+
+7. DevOps Engineer
+   Company:    Kyndryl
+   Location:   Bangalore, Karnataka
+   Work Mode:  None
+   Experience: None
+   Salary:     None
+   Match:      71/100 (Good Match)
+   Skills:     GCP, Google Cloud, GKE, Kubernetes, Docker, Terraform
+   Why this matches:
+     - Exact title match: 'DevOps Engineer'
+     - Matched 9/10 required skills: GCP, Google Cloud, GKE, Kubernetes, Docker
+     - Missing: Jenkins Shared Libraries
+   Apply:      https://www.adzuna.in/land/ad/5850907180?se=lIg9QcOe8RGSb8VpDRDiVA&utm_medium=api&utm_source=2ace800f&v=865AA385B032DD50EF68C6FBEA29FFF1FF3C6618
+
+----------------------------------------
+Summary
+New jobs found:    141
+Matching jobs:     7
+Rejected:          20
+Already sent:      0

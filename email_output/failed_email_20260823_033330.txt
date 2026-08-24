@@ -1,0 +1,29 @@
+Subject: [AI Job Hunter] 1 New DevOps Job Found — 23 Aug 2026
+
+============================================================
+AI JOB HUNTER — Daily Job Report
+Date: 23 Aug 2026
+============================================================
+
+Found: 12 | Matched: 1 | Rejected: 8
+
+1. DevOps Engineer
+   Company:    Test Technologies Pvt Ltd
+   Location:   Remote India
+   Work Mode:  Remote
+   Experience: 1-3 years
+   Salary:     ₹10-14 LPA
+   Match:      94/100 (Excellent Match)
+   Skills:     Kubernetes, GCP, Terraform, Docker, GitLab CI/CD
+   Why this matches:
+     - Strong Kubernetes experience match
+     - GCP/GKE requirement matches your profile
+     - Terraform IaC requirement aligns well
+   Apply:      https://example.com/apply/devops-engineer
+
+----------------------------------------
+Summary
+New jobs found:    12
+Matching jobs:     1
+Rejected:          8
+Already sent:      3

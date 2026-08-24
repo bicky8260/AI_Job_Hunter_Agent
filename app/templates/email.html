@@ -1,0 +1,287 @@
+{# ------------------------------------------------------------------ #}
+{# Job Card Macro                                                       #}
+{# ------------------------------------------------------------------ #}
+{% macro job_card(job, index) %}
+<tr>
+  <td style="background:#1e293b;padding:0 40px 16px 40px;">
+    <div style="background:#0f172a;border:1px solid #1e3a8a;border-radius:12px;padding:24px;position:relative;overflow:hidden;">
+
+      <!-- Score badge -->
+      <div style="position:absolute;top:20px;right:20px;">
+        <div style="background:{% if job.total_score >= 90 %}linear-gradient(135deg,#dc2626,#ea580c){% elif job.total_score >= 80 %}linear-gradient(135deg,#1d4ed8,#7c3aed){% else %}linear-gradient(135deg,#047857,#0891b2){% endif %};border-radius:20px;padding:6px 14px;text-align:center;">
+          <div style="font-size:18px;font-weight:800;color:#ffffff;">{{ job.total_score }}</div>
+          <div style="font-size:9px;color:rgba(255,255,255,0.8);text-transform:uppercase;letter-spacing:1px;">/100</div>
+        </div>
+      </div>
+
+      <!-- Job number + title -->
+      <div style="margin-right:80px;">
+        <div style="font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">#{{ index }}</div>
+        <div style="font-size:19px;font-weight:700;color:#f1f5f9;margin-bottom:4px;line-height:1.3;">{{ job.title }}</div>
+        <div style="font-size:15px;color:#38bdf8;font-weight:600;">{{ job.company }}</div>
+      </div>
+
+      <!-- Details grid -->
+      <table cellpadding="0" cellspacing="0" style="width:100%;margin-top:16px;">
+        <tr>
+          <td style="padding:3px 0;font-size:13px;color:#64748b;width:120px;">📍 Location</td>
+          <td style="font-size:13px;color:#cbd5e1;">{{ job.location or 'Not specified' }}</td>
+        </tr>
+        {% if job.work_mode %}
+        <tr>
+          <td style="padding:3px 0;font-size:13px;color:#64748b;">💻 Work Mode</td>
+          <td style="font-size:13px;color:#34d399;font-weight:500;">{{ job.work_mode }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+          <td style="padding:3px 0;font-size:13px;color:#64748b;">⏱️ Experience</td>
+          <td style="font-size:13px;color:#cbd5e1;">
+            {% if job.experience_min_years is not none and job.experience_max_years is not none %}
+              {{ job.experience_min_years|int }}-{{ job.experience_max_years|int }} years
+            {% elif job.experience_raw %}
+              {{ job.experience_raw }}
+            {% else %}
+              Not specified
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:3px 0;font-size:13px;color:#64748b;">💰 Salary</td>
+          <td style="font-size:13px;color:#f59e0b;font-weight:500;">
+            {% if job.salary_raw %}
+              {{ job.salary_raw }}
+            {% elif job.salary_min_inr %}
+              ₹{{ (job.salary_min_inr / 100000)|round(1) }} LPA{% if job.salary_max_inr %} - ₹{{ (job.salary_max_inr / 100000)|round(1) }} LPA{% endif %}
+            {% else %}
+              Not specified
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:3px 0;font-size:13px;color:#64748b;">📋 Type</td>
+          <td style="font-size:13px;color:#cbd5e1;">{{ job.employment_type or 'Full-time' }}</td>
+        </tr>
+        <tr>
+          <td style="padding:3px 0;font-size:13px;color:#64748b;">🏭 Source</td>
+          <td style="font-size:13px;color:#94a3b8;">{{ job.source }}</td>
+        </tr>
+      </table>
+
+      <!-- Skills -->
+      {% if job.skills_matched %}
+      <div style="margin-top:16px;">
+        <div style="font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Matching Skills</div>
+        <div>
+          {% for skill in job.skills_matched[:8] %}
+          <span style="display:inline-block;background:#0c4a6e;color:#38bdf8;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;margin:2px;border:1px solid #0e7490;">{{ skill }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if job.skills_missing %}
+      <div style="margin-top:10px;">
+        <div style="font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Gaps</div>
+        <div>
+          {% for skill in job.skills_missing[:4] %}
+          <span style="display:inline-block;background:#1c1917;color:#78716c;font-size:11px;padding:3px 10px;border-radius:20px;margin:2px;border:1px solid #292524;">{{ skill }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Match reasons -->
+      {% if job.match_reasons %}
+      <div style="margin-top:16px;background:#0c1628;border-left:3px solid #1d4ed8;border-radius:0 8px 8px 0;padding:12px 16px;">
+        <div style="font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Why this matches</div>
+        {% for reason in job.match_reasons[:4] %}
+        <div style="font-size:13px;color:#94a3b8;padding:2px 0;">✓ {{ reason }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Apply button -->
+      <div style="margin-top:20px;text-align:center;">
+        <a href="{{ job.application_url or job.job_url }}"
+           style="display:inline-block;background:linear-gradient(135deg,#1d4ed8,#7c3aed);color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;padding:12px 32px;border-radius:8px;letter-spacing:0.3px;">
+          Apply Now →
+        </a>
+        {% if job.linkedin_url and job.linkedin_url != job.application_url %}
+        <a href="{{ job.linkedin_url }}"
+           style="display:inline-block;background:#0a66c2;color:#ffffff;font-size:13px;font-weight:600;text-decoration:none;padding:10px 24px;border-radius:8px;margin-left:10px;">
+          LinkedIn
+        </a>
+        {% endif %}
+      </div>
+
+    </div>
+  </td>
+</tr>
+{% endmacro %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Job Hunter — Daily Job Report</title>
+</head>
+<body style="margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif;background-color:#0f172a;color:#e2e8f0;">
+
+<!-- Outer wrapper -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0f172a;min-height:100vh;">
+<tr><td align="center" style="padding:30px 15px;">
+
+<!-- Main container -->
+<table width="680" cellpadding="0" cellspacing="0" border="0" style="max-width:680px;width:100%;">
+
+  <!-- Header -->
+  <tr>
+    <td style="background:linear-gradient(135deg,#1e3a8a 0%,#7c3aed 50%,#0891b2 100%);border-radius:16px 16px 0 0;padding:32px 40px;text-align:center;">
+      <div style="font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;margin-bottom:6px;">
+        🎯 AI Job Hunter
+      </div>
+      <div style="font-size:14px;color:#bfdbfe;letter-spacing:1px;text-transform:uppercase;font-weight:500;">
+        Daily Job Report — {{ run_date }}
+      </div>
+    </td>
+  </tr>
+
+  <!-- Summary bar -->
+  <tr>
+    <td style="background:#1e293b;padding:20px 40px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="text-align:center;border-right:1px solid #334155;padding-right:20px;">
+            <div style="font-size:28px;font-weight:700;color:#38bdf8;">{{ total_found }}</div>
+            <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-top:2px;">Found</div>
+          </td>
+          <td style="text-align:center;border-right:1px solid #334155;padding:0 20px;">
+            <div style="font-size:28px;font-weight:700;color:#34d399;">{{ total_matched }}</div>
+            <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-top:2px;">Matched</div>
+          </td>
+          <td style="text-align:center;border-right:1px solid #334155;padding:0 20px;">
+            <div style="font-size:28px;font-weight:700;color:#f59e0b;">{{ total_rejected }}</div>
+            <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-top:2px;">Rejected</div>
+          </td>
+          <td style="text-align:center;padding-left:20px;">
+            <div style="font-size:28px;font-weight:700;color:#a78bfa;">{{ already_sent }}</div>
+            <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-top:2px;">Already Sent</div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Greeting -->
+  <tr>
+    <td style="background:#1e293b;padding:0 40px 20px 40px;">
+      <div style="border-top:1px solid #334155;padding-top:20px;">
+        <p style="margin:0;font-size:16px;color:#94a3b8;line-height:1.6;">
+          Hi <strong style="color:#e2e8f0;">{{ recipient_name }}</strong>,
+        </p>
+        <p style="margin:8px 0 0 0;font-size:15px;color:#94a3b8;line-height:1.6;">
+          {% if total_matched > 0 %}
+          Your AI Job Hunter found <strong style="color:#38bdf8;">{{ total_matched }} new job{{ 's' if total_matched != 1 else '' }}</strong> matching your preferences today. Here are the results, ranked by match score.
+          {% else %}
+          No new matching jobs were found today. The agent will search again tomorrow. Keep your profile updated!
+          {% endif %}
+        </p>
+      </div>
+    </td>
+  </tr>
+
+  <!-- Jobs by category -->
+  {% if excellent_matches %}
+  <!-- Excellent Matches -->
+  <tr>
+    <td style="background:#1e293b;padding:0 40px 10px 40px;">
+      <div style="background:linear-gradient(135deg,#7f1d1d,#991b1b);border-radius:10px;padding:12px 20px;margin-bottom:16px;">
+        <span style="font-size:15px;font-weight:700;color:#fca5a5;">🔥 Excellent Matches (90-100)</span>
+      </div>
+    </td>
+  </tr>
+  {% for job in excellent_matches %}
+  {{ job_card(job, loop.index) }}
+  {% endfor %}
+  {% endif %}
+
+  {% if strong_matches %}
+  <!-- Strong Matches -->
+  <tr>
+    <td style="background:#1e293b;padding:0 40px 10px 40px;">
+      <div style="background:linear-gradient(135deg,#1e3a5f,#1e40af);border-radius:10px;padding:12px 20px;margin-bottom:16px;">
+        <span style="font-size:15px;font-weight:700;color:#93c5fd;">💼 Strong Matches (80-89)</span>
+      </div>
+    </td>
+  </tr>
+  {% for job in strong_matches %}
+  {{ job_card(job, excellent_matches|length + loop.index) }}
+  {% endfor %}
+  {% endif %}
+
+  {% if good_matches %}
+  <!-- Good Matches -->
+  <tr>
+    <td style="background:#1e293b;padding:0 40px 10px 40px;">
+      <div style="background:linear-gradient(135deg,#14532d,#166534);border-radius:10px;padding:12px 20px;margin-bottom:16px;">
+        <span style="font-size:15px;font-weight:700;color:#86efac;">👍 Good Matches (70-79)</span>
+      </div>
+    </td>
+  </tr>
+  {% for job in good_matches %}
+  {{ job_card(job, excellent_matches|length + strong_matches|length + loop.index) }}
+  {% endfor %}
+  {% endif %}
+
+  <!-- Summary footer -->
+  <tr>
+    <td style="background:#1e293b;padding:20px 40px 30px 40px;">
+      <div style="border-top:1px solid #334155;padding-top:20px;">
+        <div style="font-size:13px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">Summary</div>
+        <table cellpadding="0" cellspacing="0" style="width:100%;font-size:14px;color:#94a3b8;">
+          <tr><td style="padding:4px 0;">New jobs found:</td><td style="text-align:right;color:#e2e8f0;font-weight:500;">{{ total_found }}</td></tr>
+          <tr><td style="padding:4px 0;">After deduplication:</td><td style="text-align:right;color:#e2e8f0;font-weight:500;">{{ total_unique }}</td></tr>
+          <tr><td style="padding:4px 0;">Matching jobs (score ≥ 70):</td><td style="text-align:right;color:#34d399;font-weight:600;">{{ total_matched }}</td></tr>
+          <tr><td style="padding:4px 0;">Rejected (score &lt; 70):</td><td style="text-align:right;color:#f59e0b;font-weight:500;">{{ total_rejected }}</td></tr>
+          <tr><td style="padding:4px 0;">Already sent previously:</td><td style="text-align:right;color:#a78bfa;font-weight:500;">{{ already_sent }}</td></tr>
+        </table>
+      </div>
+    </td>
+  </tr>
+
+  <!-- Sources used -->
+  <tr>
+    <td style="background:#1e293b;padding:0 40px 20px 40px;">
+      <div style="border-top:1px solid #334155;padding-top:16px;">
+        <div style="font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Sources searched</div>
+        <div style="font-size:13px;color:#64748b;">
+          {% for source, count in source_stats.items() %}
+          <span style="margin-right:12px;">{{ source }}: <strong style="color:#94a3b8;">{{ count }}</strong></span>
+          {% endfor %}
+        </div>
+      </div>
+    </td>
+  </tr>
+
+  <!-- Footer -->
+  <tr>
+    <td style="background:#0f172a;border-radius:0 0 16px 16px;padding:20px 40px;text-align:center;border-top:1px solid #1e293b;">
+      <p style="margin:0;font-size:12px;color:#475569;line-height:1.8;">
+        🤖 AI Job Hunter — Personal Job Search Agent<br>
+        This email was generated automatically. Apply manually via the links above.<br>
+        <span style="color:#334155;">Never apply automatically. Review each job before applying.</span>
+      </p>
+    </td>
+  </tr>
+
+</table>
+<!-- End main container -->
+
+</td></tr>
+</table>
+<!-- End outer wrapper -->
+
+</body>
+</html>
+
