@@ -34,3 +34,6 @@ dist/
 
 # Generated email output
 email_output/
+
+test.db
+uploads/
