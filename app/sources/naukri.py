@@ -38,9 +38,10 @@ logger = logging.getLogger(__name__)
 # Statuses that indicate a transient server-side failure worth retrying.
 _TRANSIENT_STATUS_CODES = {500, 502, 503, 504}
 
-# Statuses that mean Naukri has denied access (bot block, auth required, etc.).
+# Statuses that mean Naukri has denied access (bot block, bad format, auth required, etc.).
 # These are NOT retried — retrying access-denied responses is evasion.
-_ACCESS_DENIED_STATUS_CODES = {401, 403, 406, 429}
+_ACCESS_DENIED_STATUS_CODES = {400, 401, 403, 406, 429}
+
 
 
 class NaukriSource(JobSource):

@@ -295,6 +295,8 @@
     }
 
     .btn-ghost:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+    .btn-ghost.active { background: rgba(37,99,235,0.25); color: #60a5fa; border-color: rgba(37,99,235,0.6); }
+
 
     .btn-row {
       display: flex;
@@ -622,12 +624,15 @@
       <!-- Resume -->
       <div class="card">
         <div class="card-header">
-          <div class="card-title">Resume</div>
-          <div id="resumeStatus" style="font-size:12px;color:var(--text-muted);">Not uploaded</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="card-title">Resume</div>
+            <div id="resumeStatus" style="font-size:12px;color:var(--text-muted);">Not uploaded</div>
+          </div>
+          <button class="btn btn-ghost" id="btnReupload" style="display:none;padding:4px 10px;font-size:11px;" onclick="triggerReupload()">📤 Re-upload</button>
         </div>
 
         <div id="resumeContent">
-          <div class="upload-zone" id="uploadZone" onclick="document.getElementById('resumeInput').click()"
+          <div class="upload-zone" id="uploadZone" onclick="triggerReupload()"
                ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave(event)">
             <div class="upload-icon">📄</div>
             <div class="upload-text">Click to upload your resume (PDF)</div>
@@ -636,24 +641,40 @@
           <input type="file" id="resumeInput" accept=".pdf" style="display:none" onchange="uploadResume(this.files[0])">
 
           <div id="resumeDetails" style="display:none;margin-top:16px;">
-            <div style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;" id="resumeFilename"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <div style="font-size:13px;font-weight:600;color:var(--text-primary);" id="resumeFilename"></div>
+              <button class="btn btn-ghost" style="padding:3px 8px;font-size:11px;" onclick="triggerReupload()">🔄 Change File</button>
+            </div>
             <div id="resumeSkillTags"></div>
             <div style="font-size:12px;color:var(--text-muted);margin-top:8px;" id="resumeExpInfo"></div>
           </div>
         </div>
       </div>
+
     </div>
 
     <!-- Recent Jobs -->
     <div style="margin-bottom:24px;">
-      <div class="section-title">📋 Recent Matching Jobs</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <div class="section-title" style="margin-bottom:0;">📋 Recent Matching Jobs</div>
+        <div class="btn-row" style="gap:6px;">
+          <button id="btnFilter70" class="btn btn-ghost active" style="padding:4px 12px;font-size:11px;" onclick="setScoreFilter(70)">Matched Jobs</button>
+          <button id="btnFilter0" class="btn btn-ghost" style="padding:4px 12px;font-size:11px;" onclick="setScoreFilter(0)">All Jobs</button>
+        </div>
+
+      </div>
+
       <div id="jobsList">
         <div style="color:var(--text-muted);font-size:14px;padding:24px;text-align:center;">
           No jobs found yet. Click "Search Now" to run your first search.
         </div>
       </div>
-      <button class="btn btn-ghost" style="margin-top:12px;font-size:12px;" onclick="loadMoreJobs()">Load More Jobs</button>
+      <div style="margin-top:16px;text-align:center;">
+        <button class="btn btn-ghost" id="btnLoadMore" style="font-size:12px;" onclick="loadMoreJobs()">Load More Jobs</button>
+        <div id="endOfJobsText" style="display:none;font-size:12px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;margin-top:8px;"></div>
+      </div>
     </div>
+
 
     <!-- Activity Log -->
     <div style="margin-bottom:24px;">
@@ -815,12 +836,17 @@
   }
 
   // ─── Load resume ─────────────────────────────────────────────────────────
+  function triggerReupload() {
+    document.getElementById('resumeInput').click();
+  }
+
   async function loadResume() {
     try {
       const data = await api('GET', '/resume');
       if (data.resume_uploaded) {
         document.getElementById('uploadZone').style.display = 'none';
         document.getElementById('resumeDetails').style.display = 'block';
+        document.getElementById('btnReupload').style.display = 'inline-flex';
         document.getElementById('resumeStatus').textContent = '✅ Uploaded';
         document.getElementById('resumeStatus').style.color = 'var(--accent-green)';
         document.getElementById('resumeFilename').textContent = `📄 ${data.filename}`;
@@ -830,6 +856,8 @@
         const allSkills = [...(data.cloud_platforms || []), ...(data.devops_tools || []), ...(data.technologies || [])];
         document.getElementById('resumeSkillTags').innerHTML =
           allSkills.slice(0,12).map(s => `<span class="tag">${s}</span>`).join('');
+      } else {
+        document.getElementById('btnReupload').style.display = 'none';
       }
     } catch (e) { /* No resume uploaded */ }
   }
@@ -847,9 +875,13 @@
       const data = await res.json();
 
       if (res.ok) {
-        showToast(`Resume uploaded! ${data.skills_found} skills found.`, 'success');
-        addLog(`Resume parsed: ${data.skills_found} skills, ${data.years_of_experience}y exp`, 'success');
+        showToast(`Resume updated! ${data.skills_found} skills found.`, 'success');
+        addLog(`Resume updated: ${data.skills_found} skills, ${data.years_of_experience}y exp`, 'success');
         await loadResume();
+
+        if (confirm("New resume uploaded successfully! Would you like to run a job search now with your new resume?")) {
+          runManualSearch();
+        }
       } else {
         showToast(data.detail || 'Upload failed', 'error');
         addLog(`Resume upload failed: ${data.detail}`, 'error');
@@ -858,6 +890,7 @@
       showToast('Upload failed: ' + e.message, 'error');
     }
   }
+
 
   // ─── Drag & drop ──────────────────────────────────────────────────────────
   function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('dragover'); }
@@ -870,18 +903,47 @@
   }
 
   // ─── Load jobs ────────────────────────────────────────────────────────────
+  let minScoreFilter = 70;
+  let totalMatchingJobs = 0;
+
+  async function setScoreFilter(score) {
+    minScoreFilter = score;
+    document.getElementById('btnFilter70').className = score === 70 ? 'btn btn-ghost active' : 'btn btn-ghost';
+    document.getElementById('btnFilter0').className = score === 0 ? 'btn btn-ghost active' : 'btn btn-ghost';
+    await loadJobs(true);
+  }
+
   async function loadJobs(reset = false) {
     if (reset) jobsOffset = 0;
+
+    const btnLoadMore = document.getElementById('btnLoadMore');
+    const endOfJobsText = document.getElementById('endOfJobsText');
+    if (btnLoadMore) {
+      btnLoadMore.style.display = 'inline-flex';
+      btnLoadMore.disabled = true;
+      btnLoadMore.innerHTML = '<span class="spinner"></span> Loading...';
+    }
+
     try {
-      const data = await api('GET', `/jobs?limit=20&offset=${jobsOffset}&min_score=70`);
+      const minScoreParam = minScoreFilter > 0 ? `&min_score=${minScoreFilter}` : '';
+      const data = await api('GET', `/jobs?limit=10&offset=${jobsOffset}${minScoreParam}`);
       const jobs = data.jobs || [];
+      totalMatchingJobs = data.total || 0;
+
+      if (data.total_matched !== undefined && data.total_all !== undefined) {
+        document.getElementById('btnFilter70').textContent = `Matched Jobs (${data.total_matched})`;
+        document.getElementById('btnFilter0').textContent = `All Jobs (${data.total_all})`;
+      }
+
 
       const container = document.getElementById('jobsList');
       if (reset) container.innerHTML = '';
 
       if (jobs.length === 0 && reset) {
         container.innerHTML = `<div style="color:var(--text-muted);font-size:14px;padding:24px;text-align:center;">
-          No matching jobs found yet. Click "Search Now" to run your first search.</div>`;
+          No matching jobs found. ${minScoreFilter > 0 ? 'Try clicking "All Jobs (0+)" above to view all past jobs.' : 'Click "Search Now" to run a search.'}</div>`;
+        if (btnLoadMore) btnLoadMore.style.display = 'none';
+        if (endOfJobsText) endOfJobsText.style.display = 'none';
         return;
       }
 
@@ -889,6 +951,18 @@
         const score = job.match_score || 0;
         const scoreClass = score >= 90 ? 'score-excellent' : score >= 80 ? 'score-strong' : 'score-good';
         const url = job.application_url || job.job_url || '#';
+
+        // Format date & time when job was found/discovered
+        const isoDate = job.discovered_at || job.posted_date;
+        let formattedDateTime = '';
+        if (isoDate) {
+          const d = new Date(isoDate);
+          if (!isNaN(d.getTime())) {
+            const dateStr = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+            const timeStr = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            formattedDateTime = `${dateStr}, ${timeStr}`;
+          }
+        }
 
         const div = document.createElement('div');
         div.className = 'job-item';
@@ -904,18 +978,42 @@
               ${job.salary_raw ? `<span>💰 ${job.salary_raw}</span>` : ''}
             </div>
           </div>
-          <div class="job-source">${job.source}${job.emailed ? ' · ✉️' : ''}</div>
+          <div class="job-right" style="text-align:right;flex-shrink:0;">
+            <div class="job-source">${job.source}${job.emailed ? ' · ✉️' : ''}</div>
+            ${formattedDateTime ? `<div class="job-date" style="font-size:11px;color:var(--text-secondary);margin-top:4px;font-family:'JetBrains Mono',monospace;">🕒 ${formattedDateTime}</div>` : ''}
+          </div>
         `;
         container.appendChild(div);
       });
 
       jobsOffset += jobs.length;
+
+      // Update Load More Button & End of List text
+      if (btnLoadMore && endOfJobsText) {
+        if (jobsOffset >= totalMatchingJobs || jobs.length === 0) {
+          btnLoadMore.style.display = 'none';
+          endOfJobsText.style.display = 'block';
+          endOfJobsText.textContent = `✓ All ${totalMatchingJobs} jobs loaded from database`;
+        } else {
+          btnLoadMore.style.display = 'inline-flex';
+          btnLoadMore.disabled = false;
+          btnLoadMore.innerHTML = `Load More Jobs (${jobsOffset}/${totalMatchingJobs})`;
+          endOfJobsText.style.display = 'none';
+        }
+      }
     } catch (e) {
       addLog('Failed to load jobs: ' + e.message, 'error');
+      if (btnLoadMore) {
+        btnLoadMore.style.display = 'inline-flex';
+        btnLoadMore.disabled = false;
+        btnLoadMore.innerHTML = 'Load More Jobs';
+      }
     }
   }
 
+
   function loadMoreJobs() { loadJobs(false); }
+
 
   // ─── Agent controls ───────────────────────────────────────────────────────
   async function startAgent() {

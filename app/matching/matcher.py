@@ -48,11 +48,14 @@ class GeminiProvider(LLMProvider):
     def __init__(self):
         self.settings = get_settings()
         self._model = None
+        self._disabled = False
 
     def is_available(self) -> bool:
-        return bool(self.settings.gemini_api_key)
+        return bool(self.settings.gemini_api_key) and not self._disabled
 
     def _get_model(self):
+        if self._disabled:
+            return None
         if self._model is None:
             try:
                 import google.generativeai as genai
@@ -60,10 +63,13 @@ class GeminiProvider(LLMProvider):
                 self._model = genai.GenerativeModel(self.settings.gemini_model)
             except Exception as e:
                 logger.error(f"Gemini init failed: {e!r}")
+                self._disabled = True
                 self._model = None
         return self._model
 
     async def complete(self, prompt: str) -> str:
+        if self._disabled:
+            return ""
         model = self._get_model()
         if not model:
             return ""
@@ -74,8 +80,14 @@ class GeminiProvider(LLMProvider):
             response = await loop.run_in_executor(None, model.generate_content, prompt)
             return response.text or ""
         except Exception as e:
-            logger.warning(f"Gemini completion failed: {e!r}")
+            err_str = str(e)
+            if any(k in err_str for k in ("ResourceExhausted", "Quota", "429", "PermissionDenied", "API key")):
+                logger.warning(f"Gemini API rate-limited or key issue: {e!r}. Disabling LLM for remaining jobs in this run (using rule-based scoring).")
+                self._disabled = True
+            else:
+                logger.warning(f"Gemini completion failed: {e!r}")
             return ""
+
 
 
 class OpenAIProvider(LLMProvider):

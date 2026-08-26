@@ -8,15 +8,16 @@ A production-quality personal job-search agent that runs daily, searches multipl
 
 | Feature | Description |
 |---|---|
-| 🤖 **AI Matching** | LLM-powered semantic skill matching (GKE ↔ Kubernetes, Terraform ↔ IaC) |
+| 🤖 **AI Matching** | Gemini 2.5 Flash powered semantic skill matching (GKE ↔ Kubernetes, Terraform ↔ IaC) with automatic quota fallback |
 | 📊 **0-100 Scoring** | Intelligent scoring across 6 dimensions |
-| 🔎 **Multi-Source** | RemoteOK, Naukri (best-effort), Arbeitnow, Adzuna, Jooble, LinkedIn URL discovery |
+| 🔎 **Multi-Source** | RemoteOK, Naukri (dedicated adapter), Arbeitnow, Adzuna, Jooble, LinkedIn URL discovery, Company pages |
 | 🔄 **Deduplication** | Canonical hash + URL matching prevents duplicate emails |
 | 📅 **Daily Schedule** | Automatically runs at 9:00 AM IST (configurable) |
 | ▶/⏹ **START/STOP** | Full agent control with database preservation |
 | 📧 **Rich Email** | Dark-themed HTML email with match scores and apply links |
-| 🎛️ **Dashboard** | Real-time web UI for status, controls, and job browsing |
-| 📄 **Resume Upload** | Upload PDF resume; skills extracted automatically |
+| 🎛️ **Dashboard** | Real-time web UI with date/time stamps, recency sorting, dynamic job counts, and pagination |
+| 📄 **Resume Re-upload** | Upload/re-upload PDF resume with instant search prompt and automated skill extraction |
+| 📋 **Job Search Report** | Formatted multi-source breakdown logged after every search run |
 | 🐳 **Docker** | Full Docker Compose stack |
 
 ---
@@ -33,8 +34,8 @@ A production-quality personal job-search agent that runs daily, searches multipl
 ┌─────────────────────────────────────────────────────────────┐
 │                      Job Agent Core                         │
 │  Sources: RemoteOK │ Naukri │ Arbeitnow │ Adzuna │ Jooble   │
-│           CompanyCareer │ LinkedIn URL Discovery             │
-│  Matcher: Gemini / OpenAI / Mock (configurable)             │
+│           CompanyCareers │ LinkedIn URL Discovery           │
+│  Matcher: Gemini (2.5-flash) / OpenAI / Mock (configurable) │
 │  Scorer:  Title(20) + Skills(30) + Exp(15) + Loc(15)        │
 │           Salary(10) + Relevance(10) = 100pts               │
 └─────────────────────────────────────────────────────────────┘
@@ -120,6 +121,7 @@ Copy `.env.example` to `.env` and configure:
 | `EMAIL_PASSWORD` | Gmail App Password (not your real password!) |
 | `EMAIL_TO` | Where to send job emails |
 | `LLM_PROVIDER` | `gemini` / `openai` / `mock` |
+| `GEMINI_MODEL` | `gemini-2.5-flash` (default) |
 
 ### Gmail Setup (App Password)
 1. Enable 2-Factor Authentication on your Google account
@@ -136,25 +138,66 @@ Copy `.env.example` to `.env` and configure:
 | `JOOBLE_API_KEY` | [jooble.org/api/about](https://jooble.org/api/about) — Free |
 | `SERPAPI_KEY` | [serpapi.com](https://serpapi.com) — Paid ($50/mo) for LinkedIn URL discovery |
 
-> **Naukri.com** — No API key is required or available. See the [Naukri Integration Notes](#naukri-integration-notes) section below.
+> **Naukri.com** — Dedicated ethical adapter (`app/sources/naukri.py`). No API key is required or available. See the [Naukri Integration Notes](#naukri-integration-notes) section below.
 
 ---
 
 ## ⚠️ Naukri Integration Notes
 
-Naukri.com is India's largest job board and is included as a source. However:
+Naukri.com is India's largest job board and is integrated via a dedicated adapter in `app/sources/naukri.py`.
 
-- **No authorized public API exists.** Naukri does not provide an API key program for independent developers. Enterprise integrations are only available through direct Naukri account management.
-- **Best-effort access only.** `NaukriSource` makes honest GET requests to Naukri's public search endpoint using a transparent `User-Agent` that identifies this tool. It does not spoof browser fingerprints, harvest session cookies, or attempt to bypass bot protection.
-- **Graceful failure.** If Naukri returns an access-denied response (4xx), the source logs a warning and returns an empty result. **The agent continues running normally using all other sources.** No configuration change is needed.
+- **No authorized public API exists.** Naukri does not provide a developer API program. Enterprise access is restricted to direct account management.
+- **Ethical & Compliant Access Only.** `NaukriSource` makes transparent HTTP GET requests with an explicit header identifying the tool: `User-Agent: AI-Job-Hunter/1.0 (personal job search tool; not a browser)`. It strictly avoids browser fingerprinting, spoofing headers, CAPTCHA solving, session warming, or rate limit evasion.
+- **Non-retryable 4xx Handling.** If Naukri returns an access-denied status code (400, 401, 403, 406, 429), the source logs a single warning and immediately yields `[]` without retrying.
+- **Exponential Backoff for 5xx.** Server errors (500, 502, 503) and network failures retry up to 2 times with backoff.
+- **Graceful Failure.** If blocked, **the agent continues running normally using all other job sources.**
 - **Do not add Naukri credentials to `.env`.** None are supported.
 
 | Scenario | Behaviour |
 |---|---|
 | Naukri returns 200 OK | Jobs are parsed and included |
-| Naukri returns 403/406 (bot block) | Logs warning, returns `[]`, agent continues |
-| Naukri returns 5xx (server error) | Retries up to 2×, then returns `[]` |
-| Network timeout | Retries up to 2×, then returns `[]` |
+| Naukri returns 4xx (access denied/bot block) | Logs warning, returns `[]` immediately without retrying |
+| Naukri returns 5xx (server error) | Retries up to 2× with backoff, then returns `[]` |
+| Network timeout | Retries up to 2× with backoff, then returns `[]` |
+
+---
+
+## 📊 Job Search Summary Report
+
+At the conclusion of every job search run, the agent logs a structured report to stdout/logs:
+
+```text
+==================== Job Search Report — 09:00 AM ====================
+LinkedIn            : 24 discovered
+Adzuna              : 41 discovered
+Jooble              : 18 discovered
+Company Sites       : 13 discovered
+RemoteOK            : 7 discovered
+Naukri              : unavailable
+----------------------------------------------------------------------
+After deduplication : 72 unique jobs
+AI matched          : 19
+New since yesterday : 8
+Email sent successfully.
+======================================================================
+```
+
+---
+
+## 📄 Resume Upload & Re-upload
+
+1. **Dashboard Upload / Re-upload:**
+   - Click the upload area or the **`📤 Re-upload`** / **`🔄 Change File`** buttons in the Resume card.
+   - Upload your PDF resume file.
+   - The parser extracts skills, cloud platforms, DevOps tools, and experience.
+   - After a successful upload, an instant dialog offers: *"Would you like to run a job search now with your new resume?"*
+2. **Via API:**
+   ```bash
+   curl -X POST http://localhost:8000/api/resume/upload \
+     -F "file=@/path/to/your/resume.pdf"
+   ```
+
+---
 
 ## 📋 Job Preferences
 
@@ -185,37 +228,12 @@ job_preferences:
 
 **No restart required** — preferences are reloaded on every search run.
 
-You can also update preferences via the API:
-```bash
-curl -X PUT http://localhost:8000/api/preferences \
-  -H "Content-Type: application/json" \
-  -d '{"job_preferences": {"minimum_salary_inr": 1200000}}'
-```
-
----
-
-## 📄 Resume Upload
-
-1. **Via Dashboard**: Click the resume upload area and select your PDF
-2. **Via API**:
-   ```bash
-   curl -X POST http://localhost:8000/api/resume/upload \
-     -F "file=@/path/to/your/resume.pdf"
-   ```
-
-The parser extracts:
-- Skills and technologies
-- Cloud platforms (GCP, AWS, Azure)
-- DevOps tools (Kubernetes, Terraform, Docker, etc.)
-- Years of experience
-- Education and certifications
-
 ---
 
 ## ▶ START / STOP the Agent
 
 ### Via Dashboard
-Click the **"Start Agent"** or **"Stop Agent"** button on the dashboard.
+Click **"Start Agent"** or **"Stop Agent"** on the dashboard.
 
 ### Via API
 
@@ -229,52 +247,13 @@ curl -X POST http://localhost:8000/api/agent/stop
 # Status
 curl http://localhost:8000/api/agent/status
 
-# Trigger manual search
+# Trigger manual search (works in any state)
 curl -X POST http://localhost:8000/api/agent/search
 ```
 
-### Behavior
-
-| State | Behavior |
-|---|---|
-| **RUNNING** | Searches daily at 9:00 AM IST. Emails new matching jobs. |
-| **STOPPED** | No searches. No emails. Database preserved. |
-| **Restart after stop** | Only emails jobs discovered after restart date. |
-
 ---
 
-## 📅 Daily Scheduling
-
-The agent runs automatically every day at **9:00 AM IST**.
-
-Configure in `.env`:
-```env
-SCHEDULER_TIMEZONE=Asia/Kolkata
-SCHEDULER_HOUR=9
-SCHEDULER_MINUTE=0
-```
-
-If the machine is offline at the scheduled time, the job is missed gracefully (logged, not retried). APScheduler uses `coalesce=True` to prevent pile-up.
-
----
-
-## 📧 Email
-
-### Test Email Configuration
-```bash
-curl -X POST http://localhost:8000/api/agent/test-email
-```
-
-If email is not configured, the test email is saved to `email_output/test_email_*.html` — open it in a browser to preview.
-
-### Email Format
-- Subject: `[AI Job Hunter] 7 New DevOps Jobs Found — 22 Aug 2026`
-- Groups: 🔥 Excellent (90-100) | 💼 Strong (80-89) | 👍 Good (70-79)
-- Each job: title, company, location, salary, experience, skills, match reasoning, apply button
-
----
-
-## 🎯 Match Scoring
+## 🎯 Match Scoring & Quota Safety
 
 | Component | Max Points | Factors |
 |---|---|---|
@@ -286,95 +265,26 @@ If email is not configured, the test email is saved to `email_output/test_email_
 | Overall relevance | 10 | DevOps keywords in description |
 | **Total** | **100** | |
 
-**Skill Synonyms** (built-in):
-- GKE → Kubernetes
-- Terraform → Infrastructure as Code
-- GCP → Google Cloud Platform
-- ArgoCD → GitOps
-- (and many more in `config.yaml`)
-
-Only jobs scoring **≥ 70** are emailed.
-
----
-
-## 🔌 Adding a New Job Source
-
-1. Create a new file in `app/sources/`:
-
-```python
-# app/sources/my_new_source.py
-from app.sources.base import JobSource, RawJob
-
-class MyNewSource(JobSource):
-    name = "MySource"
-    description = "My custom job source"
-
-    async def search(self) -> list[RawJob]:
-        jobs = []
-        # ... fetch and parse jobs ...
-        return jobs
-```
-
-2. Register it in `app/sources/__init__.py`:
-
-```python
-from app.sources.my_new_source import MyNewSource
-
-def get_all_sources(preferences, search_settings):
-    source_classes = [
-        RemoteOKSource,
-        # ... existing sources ...
-        MyNewSource,  # ← add here
-    ]
-    ...
-```
-
-That's it. The agent will automatically call it on every search run.
+- **Gemini 2.5 Flash Integration:** Uses Gemini for intelligent job parsing and description scoring.
+- **Automatic LLM Quota Fallback:** If Gemini hits rate limits (429 / `ResourceExhausted`), the system automatically disables Gemini calls for the current run and falls back to rule-based scoring without failing the run.
+- **Match Threshold:** Only jobs scoring **≥ 70** are emailed.
 
 ---
 
 ## 🧪 Testing
 
+The repository features 118 unit tests covering all components:
+
 ```bash
-# Run all tests
+# Run all 118 unit tests
 pytest tests/ -v
 
-# Run with coverage
-pytest tests/ -v --cov=app --cov-report=html
-
-# Run specific test file
+# Test specific components
+pytest tests/test_naukri.py -v
 pytest tests/test_matching.py -v
-
-# Run specific test
-pytest tests/test_deduplication.py::TestDeduplication::test_removes_exact_duplicate -v
 ```
 
-All tests use mocked external services — no real API calls required.
-
----
-
-## 🐳 Docker Reference
-
-```bash
-# Start all services
-docker compose up -d
-
-# View logs
-docker compose logs -f job-hunter-api
-
-# Rebuild after code changes
-docker compose build job-hunter-api
-docker compose up -d job-hunter-api
-
-# Stop (database preserved)
-docker compose down
-
-# Stop and delete database (fresh start)
-docker compose down -v
-
-# Shell into container
-docker compose exec job-hunter-api bash
-```
+All tests execute offline using mocked HTTP services.
 
 ---
 
@@ -387,126 +297,52 @@ AI_Job_Hunter_Agent/
 │   ├── config.py                  # Settings + config.yaml loader
 │   ├── api/
 │   │   ├── routes_agent.py        # START/STOP/STATUS/SEARCH
-│   │   ├── routes_jobs.py         # GET /jobs, GET /jobs/{id}
+│   │   ├── routes_jobs.py         # GET /jobs (recency sorted + counts)
 │   │   ├── routes_preferences.py  # GET/PUT /preferences
 │   │   └── routes_resume.py       # POST/GET /resume
 │   ├── agents/
-│   │   └── job_agent.py           # Main orchestrator
+│   │   └── job_agent.py           # Main orchestrator + Report logger
 │   ├── sources/
 │   │   ├── base.py                # JobSource abstract class
+│   │   ├── naukri.py              # Dedicated ethical Naukri adapter
 │   │   ├── job_boards.py          # RemoteOK, Arbeitnow, Adzuna, Jooble
-│   │   ├── company_careers.py     # Company pages + Naukri
+│   │   ├── company_careers.py     # Company career pages
 │   │   ├── public_search.py       # Public search fallback
 │   │   └── linkedin_discovery.py  # LinkedIn URL via SerpAPI
 │   ├── matching/
-│   │   ├── matcher.py             # LLM abstraction + JobMatcher
+│   │   ├── matcher.py             # LLM abstraction + Gemini 2.5 + Fallback
 │   │   ├── scoring.py             # 0-100 scoring engine
 │   │   └── resume_parser.py       # PDF resume parser
 │   ├── database/
-│   │   ├── database.py            # SQLAlchemy async engine
+│   │   ├── database.py            # Async SQLAlchemy + Savepoints
 │   │   └── models.py              # ORM models
 │   ├── notifications/
 │   │   └── email.py               # SMTP email sender
 │   ├── scheduler/
 │   │   └── scheduler.py           # APScheduler daily cron
 │   └── templates/
-│       ├── dashboard.html         # Web dashboard
+│       ├── dashboard.html         # Web dashboard UI
 │       └── email.html             # HTML email template
 ├── tests/
-│   ├── conftest.py
-│   ├── test_matching.py
-│   ├── test_deduplication.py
-│   ├── test_sources.py
-│   ├── test_agent.py
-│   └── test_email.py
-├── docker/
-│   └── init.sql
-├── config.yaml                    # Job preferences (edit freely)
+│   ├── test_naukri.py             # 29 Naukri adapter unit tests
+│   ├── test_matching.py           # Matcher & scoring tests
+│   ├── test_deduplication.py      # Job deduplication tests
+│   ├── test_sources.py            # Source adapter tests
+│   ├── test_agent.py              # Orchestrator tests
+│   └── test_email.py              # Email rendering tests
+├── config.yaml                    # Job preferences
 ├── .env.example                   # Environment variables template
-├── .gitignore
 ├── requirements.txt
 ├── Dockerfile
 ├── docker-compose.yml
-├── pytest.ini
 └── README.md
 ```
 
 ---
 
-## 🔒 Security
+## 🔒 Security & Ethics
 
-- **Never** commit `.env` to git — it's in `.gitignore`
-- Use Gmail **App Passwords**, not your real password
-- All API keys are in `.env` only
-- Docker Compose uses bind mounts for `config.yaml` (read-only)
-- Non-root user in Docker container
-
----
-
-## ⚠️ Important: What the Agent Does NOT Do
-
-The agent will **NEVER**:
-- ❌ Apply for jobs automatically
-- ❌ Log into LinkedIn
-- ❌ Use your LinkedIn credentials
-- ❌ Scrape authenticated pages
-- ❌ Bypass CAPTCHA or rate limits
-- ❌ Send messages to recruiters
-
-The agent **only**:
-- ✅ Finds jobs from public sources
-- ✅ Scores them against your resume
-- ✅ Emails you the best matches
-- ✅ You apply manually
-
----
-
-## 🔧 Troubleshooting
-
-### "Database connection failed"
-- Check PostgreSQL is running: `pg_isready`
-- Verify `DATABASE_URL` in `.env`
-- For Docker: `docker compose logs postgres`
-
-### "Email not sending"
-- Use an App Password, not your Gmail password
-- Enable 2FA first, then create App Password
-- Test: `curl -X POST http://localhost:8000/api/agent/test-email`
-- If not configured, email is saved to `email_output/`
-
-### "No jobs found"
-- Agent must be RUNNING: click Start on dashboard
-- Click "Search Now" for immediate search
-- Check logs: `docker compose logs -f job-hunter-api`
-- Add Adzuna/Jooble keys for better India coverage
-
-### "LLM matching not working"
-- Set `LLM_PROVIDER=mock` in `.env` to use rule-based matching (no API key needed)
-- For Gemini: get a free key at [aistudio.google.com](https://aistudio.google.com/app/apikey)
-
-### "Scheduler not running"
-- The scheduler starts with the app
-- Check: `curl http://localhost:8000/api/agent/status`
-- Look for `next_scheduled_run` in the response
-
----
-
-## 📊 API Reference
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/` | Dashboard UI |
-| GET | `/health` | Health check |
-| GET | `/api/agent/status` | Agent status + stats |
-| POST | `/api/agent/start` | Start the agent |
-| POST | `/api/agent/stop` | Stop the agent |
-| POST | `/api/agent/search` | Trigger manual search |
-| POST | `/api/agent/test-email` | Send test email |
-| GET | `/api/agent/runs` | Search run history |
-| GET | `/api/jobs` | List discovered jobs |
-| GET | `/api/jobs/{id}` | Get job details |
-| GET | `/api/preferences` | Get job preferences |
-| PUT | `/api/preferences` | Update preferences |
-| POST | `/api/resume/upload` | Upload PDF resume |
-| GET | `/api/resume` | Get parsed resume data |
-| GET | `/docs` | Swagger UI |
+- **No Bot Evasion:** Does not spoof client fingerprints, bypass CAPTCHA, or simulate human interaction on protected job boards.
+- **Environment Isolation:** Secrets are kept strictly in `.env`.
+- **Database Safety:** Uses SQLAlchemy `SAVEPOINT` nesting to prevent transaction corruption on unique constraint violations.
+- **Manual Apply:** The agent never automatically submits applications or communicates with recruiters on your behalf.

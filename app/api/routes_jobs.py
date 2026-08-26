@@ -8,9 +8,10 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+
 
 from app.database.database import get_db
 from app.database.models import Job, JobMatch, SentJob
@@ -69,40 +70,59 @@ async def list_jobs(
 ):
     """
     List discovered jobs with optional filters.
-    Results sorted by match score (highest first).
+    Results sorted by discovery date/time (newest first), then match score.
     """
-    query = (
-        select(Job)
-        .options(selectinload(Job.match), selectinload(Job.sent_record))
-        .order_by(desc(Job.discovered_at))
-    )
+    query = select(Job).options(selectinload(Job.match), selectinload(Job.sent_record))
+    count_query = select(func.count(Job.id))
+
+    if min_score is not None:
+        query = query.join(JobMatch, Job.id == JobMatch.job_id).where(
+            JobMatch.total_score >= min_score
+        )
+        count_query = count_query.join(JobMatch, Job.id == JobMatch.job_id).where(
+            JobMatch.total_score >= min_score
+        )
+        query = query.order_by(desc(Job.discovered_at), desc(JobMatch.total_score))
+    else:
+        query = query.order_by(desc(Job.discovered_at))
 
     if emailed_only:
         query = query.join(SentJob, Job.id == SentJob.job_id)
+        count_query = count_query.join(SentJob, Job.id == SentJob.job_id)
 
     if source:
         query = query.where(Job.source == source)
+        count_query = count_query.where(Job.source == source)
+
+    total_count = (await db.scalar(count_query)) or 0
+
+    total_matched_count = (await db.scalar(
+        select(func.count(Job.id))
+        .join(JobMatch, Job.id == JobMatch.job_id)
+        .where(JobMatch.total_score >= 70)
+    )) or 0
+
+    total_all_count = (await db.scalar(
+        select(func.count(Job.id))
+    )) or 0
 
     query = query.offset(offset).limit(limit)
-
     result = await db.execute(query)
     jobs = result.scalars().all()
 
-    # Filter by min_score after loading (SQLAlchemy join on match score is complex)
     serialized = [serialize_job(j) for j in jobs]
 
-    if min_score is not None:
-        serialized = [j for j in serialized if (j["match_score"] or 0) >= min_score]
-
-    # Sort by match score
-    serialized.sort(key=lambda j: j["match_score"] or 0, reverse=True)
-
     return {
-        "total": len(serialized),
+        "total": total_count,
+        "total_matched": total_matched_count,
+        "total_all": total_all_count,
         "offset": offset,
         "limit": limit,
         "jobs": serialized,
     }
+
+
+
 
 
 @router.get("/jobs/{job_id}")

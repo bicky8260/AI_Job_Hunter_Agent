@@ -193,41 +193,48 @@ async def get_resume_profile(db_session) -> Dict[str, Any]:
 
 
 async def save_job_to_db(db_session, job: RawJob, canonical_id: str) -> Optional[Job]:
-    """Save a raw job to the database. Returns the Job ORM object."""
-    db_job = Job(
-        canonical_id=canonical_id,
-        title=job.title,
-        company=job.company,
-        location=job.location,
-        work_mode=job.work_mode,
-        salary_raw=job.salary_raw,
-        salary_min_inr=job.salary_min_inr,
-        salary_max_inr=job.salary_max_inr,
-        salary_currency=job.salary_currency,
-        experience_min_years=job.experience_min_years,
-        experience_max_years=job.experience_max_years,
-        experience_raw=job.experience_raw,
-        employment_type=job.employment_type,
-        required_skills=job.required_skills,
-        preferred_skills=job.preferred_skills,
-        description=job.description,
-        posted_date=job.posted_date,
-        application_deadline=job.application_deadline,
-        application_url=job.application_url,
-        job_url=job.job_url,
-        company_url=job.company_url,
-        linkedin_url=job.linkedin_url,
-        source=job.source,
-        source_job_id=str(job.source_job_id) if job.source_job_id is not None else None,
-        raw_data=job.raw_data,
+    """Save a raw job to the database using savepoints to prevent transaction rollbacks."""
+    result = await db_session.execute(
+        select(Job).where(Job.canonical_id == canonical_id)
     )
-    db_session.add(db_job)
+    existing = result.scalar_one_or_none()
+    if existing:
+        return existing
+
     try:
-        await db_session.flush()
-        return db_job
-    except IntegrityError:
-        await db_session.rollback()
-        # Job already exists — fetch it
+        async with db_session.begin_nested():
+            db_job = Job(
+                canonical_id=canonical_id,
+                title=job.title,
+                company=job.company,
+                location=job.location,
+                work_mode=job.work_mode,
+                salary_raw=job.salary_raw,
+                salary_min_inr=job.salary_min_inr,
+                salary_max_inr=job.salary_max_inr,
+                salary_currency=job.salary_currency,
+                experience_min_years=job.experience_min_years,
+                experience_max_years=job.experience_max_years,
+                experience_raw=job.experience_raw,
+                employment_type=job.employment_type,
+                required_skills=job.required_skills,
+                preferred_skills=job.preferred_skills,
+                description=job.description,
+                posted_date=job.posted_date,
+                application_deadline=job.application_deadline,
+                application_url=job.application_url,
+                job_url=job.job_url,
+                company_url=job.company_url,
+                linkedin_url=job.linkedin_url,
+                source=job.source,
+                source_job_id=str(job.source_job_id) if job.source_job_id is not None else None,
+                raw_data=job.raw_data,
+            )
+            db_session.add(db_job)
+            await db_session.flush()
+            return db_job
+    except Exception as e:
+        logger.warning(f"Failed to save job '{job.title}': {e!r}")
         result = await db_session.execute(
             select(Job).where(Job.canonical_id == canonical_id)
         )
@@ -235,27 +242,34 @@ async def save_job_to_db(db_session, job: RawJob, canonical_id: str) -> Optional
 
 
 async def save_match_to_db(db_session, job_id: str, match_result: Dict[str, Any]) -> None:
-    """Save match score and reasoning to database."""
-    match = JobMatch(
-        job_id=job_id,
-        total_score=match_result["total_score"],
-        title_score=match_result.get("title_score", 0),
-        skills_score=match_result.get("skills_score", 0),
-        experience_score=match_result.get("experience_score", 0),
-        location_score=match_result.get("location_score", 0),
-        salary_score=match_result.get("salary_score", 0),
-        relevance_score=match_result.get("relevance_score", 0),
-        match_reasons=match_result.get("match_reasons", []),
-        gaps=match_result.get("gaps", []),
-        match_category=match_result.get("match_category", ""),
-        skills_matched=match_result.get("skills_matched", []),
-        skills_missing=match_result.get("skills_missing", []),
-    )
-    db_session.add(match)
+    """Save match score and reasoning to database using savepoint."""
+    existing = (await db_session.execute(select(JobMatch).where(JobMatch.job_id == job_id))).scalar_one_or_none()
+    if existing:
+        return
+
     try:
-        await db_session.flush()
-    except IntegrityError:
-        await db_session.rollback()
+        async with db_session.begin_nested():
+            match = JobMatch(
+                job_id=job_id,
+                total_score=match_result["total_score"],
+                title_score=match_result.get("title_score", 0),
+                skills_score=match_result.get("skills_score", 0),
+                experience_score=match_result.get("experience_score", 0),
+                location_score=match_result.get("location_score", 0),
+                salary_score=match_result.get("salary_score", 0),
+                relevance_score=match_result.get("relevance_score", 0),
+                match_reasons=match_result.get("match_reasons", []),
+                gaps=match_result.get("gaps", []),
+                match_category=match_result.get("match_category", ""),
+                skills_matched=match_result.get("skills_matched", []),
+                skills_missing=match_result.get("skills_missing", []),
+            )
+            db_session.add(match)
+            await db_session.flush()
+    except Exception as e:
+        logger.warning(f"Failed to save match for job {job_id}: {e!r}")
+
+
 
 
 # ---------------------------------------------------------------------------
@@ -287,14 +301,16 @@ class JobAgent:
             # ------------------------------------------------------------------
             state = await get_or_create_agent_state(db)
 
-            if not state.enabled:
-                logger.info(f"Agent is STOPPED — skipping run (triggered_by={triggered_by})")
+            if not state.enabled and triggered_by != "manual":
+                logger.info(f"Agent is STOPPED — skipping scheduled run (triggered_by={triggered_by})")
+
                 return {
                     "status": "skipped",
                     "reason": "Agent is stopped",
                     "total_found": 0,
                     "total_matched": 0,
                 }
+
 
             logger.info(f"=== Job search run started (triggered_by={triggered_by}) ===")
 
@@ -477,12 +493,18 @@ class JobAgent:
         }
 
         emailed_count = 0
+        email_status = "No matching jobs to send."
         if matched_jobs:
             is_test = not self.settings.is_email_configured
             email_sent = await send_job_email(matched_jobs, run_stats, test_mode=is_test)
 
             if email_sent:
                 emailed_count = len(matched_jobs)
+                email_status = (
+                    "Email saved to output file (test mode)."
+                    if is_test
+                    else "Email sent successfully."
+                )
                 # Mark each job as sent individually to avoid one bad FK killing the batch
                 for email_job in matched_jobs:
                     job_id = email_job.get("id")
@@ -499,6 +521,37 @@ class JobAgent:
                         logger.warning(f"Failed to mark job {job_id} as sent: {e!r}")
                         await db.rollback()
 
+        # ------------------------------------------------------------------
+        # 11. Format and log detailed Job Search Report
+        # ------------------------------------------------------------------
+        SOURCE_DISPLAY_NAMES = {
+            "LinkedInDiscovery": "LinkedIn",
+            "CompanyCareers": "Company Sites",
+            "TheMuse": "The Muse",
+            "PublicSearch": "Public Search",
+            "Arbeitnow": "Arbeitnow",
+            "RemoteOK": "RemoteOK",
+            "Adzuna": "Adzuna",
+            "Jooble": "Jooble",
+            "Naukri": "Naukri",
+        }
+
+        report_time = datetime.now().strftime("%I:%M %p")
+        report_lines = [f"Job Search Report — {report_time}\n"]
+
+        for source in sources:
+            display_name = SOURCE_DISPLAY_NAMES.get(source.name, source.name)
+            count = source_stats.get(source.name, 0)
+            status_text = f"{count} discovered" if count > 0 else "unavailable"
+            report_lines.append(f"{display_name:<14}: {status_text}")
+
+        report_lines.append(f"\nAfter deduplication: {total_unique} unique jobs")
+        report_lines.append(f"AI matched: {len(matched_jobs)}")
+        report_lines.append(f"New since yesterday: {len(new_jobs)}")
+        report_lines.append(f"\n{email_status}")
+
+        logger.info("\n" + "\n".join(report_lines))
+
         return {
             "status": "completed",
             "total_found": total_found,
@@ -510,3 +563,4 @@ class JobAgent:
             "already_sent": already_sent_count,
             "source_stats": run_stats["source_stats"],
         }
+
