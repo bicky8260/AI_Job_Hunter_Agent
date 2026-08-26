@@ -483,18 +483,21 @@ class JobAgent:
 
             if email_sent:
                 emailed_count = len(matched_jobs)
-                # Mark as sent
+                # Mark each job as sent individually to avoid one bad FK killing the batch
                 for email_job in matched_jobs:
-                    if email_job.get("id"):
+                    job_id = email_job.get("id")
+                    if not job_id:
+                        continue
+                    try:
                         sent = SentJob(
-                            job_id=email_job["id"],
+                            job_id=job_id,
                             run_id=search_run.id,
                         )
                         db.add(sent)
-                try:
-                    await db.flush()
-                except Exception as e:
-                    logger.warning(f"Failed to mark jobs as sent: {e!r}")
+                        await db.flush()
+                    except Exception as e:
+                        logger.warning(f"Failed to mark job {job_id} as sent: {e!r}")
+                        await db.rollback()
 
         return {
             "status": "completed",

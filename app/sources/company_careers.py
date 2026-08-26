@@ -130,108 +130,6 @@ class CompanyCareersSource(JobSource):
         return jobs[:20]  # cap per company
 
 
-class NaukriSource(JobSource):
-    """
-    Naukri.com is the largest job board in India.
-    Uses their public API endpoint (no authentication required for public search).
-    """
-
-    name = "Naukri"
-    description = "Naukri.com India's largest job board"
-    SEARCH_URL = "https://www.naukri.com/jobapi/v3/search"
-
-    async def search(self) -> List[RawJob]:
-        jobs: List[RawJob] = []
-        queries = self.build_search_queries()
-
-        async with httpx.AsyncClient(
-            timeout=self.request_timeout,
-            headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                "Referer": "https://www.naukri.com/",
-                "appid": "109",
-                "systemid": "Naukri",
-            },
-        ) as client:
-            for query in queries[:3]:
-                try:
-                    resp = await client.get(
-                        self.SEARCH_URL,
-                        params={
-                            "noOfResults": 20,
-                            "urlType": "search_by_keyword",
-                            "searchType": "adv",
-                            "keyword": query,
-                            "location": "india",
-                            "experience": f"{self.preferences.get('experience', {}).get('minimum_years', 1)},{self.preferences.get('experience', {}).get('maximum_years', 3)}",
-                            "sort": "1",
-                            "jobAge": self.max_age_days,
-                        },
-                    )
-
-                    if resp.status_code != 200:
-                        logger.info(f"Naukri returned {resp.status_code} for '{query}'")
-                        continue
-
-                    data = resp.json()
-                    job_details = data.get("jobDetails", [])
-
-                    for item in job_details:
-                        # Extract salary
-                        salary_detail = item.get("placeholders", [{}])
-                        salary_text = ""
-                        for p in salary_detail:
-                            if p.get("label") == "Salary":
-                                salary_text = p.get("title", "")
-                                break
-
-                        sal_min, sal_max = _parse_lpa_salary(salary_text)
-
-                        # Extract experience
-                        exp_min, exp_max = None, None
-                        exp_text = ""
-                        for p in salary_detail:
-                            if p.get("label") == "Experience":
-                                exp_text = p.get("title", "")
-                                exp_min, exp_max = _parse_experience(exp_text)
-                                break
-
-                        # Extract skills
-                        skills = [s.get("label", "") for s in item.get("tagsAndSkills", [])]
-
-                        job = RawJob(
-                            title=item.get("title", ""),
-                            company=item.get("companyName", ""),
-                            source=self.name,
-                            job_url=item.get("jdURL", ""),
-                            application_url=item.get("jdURL", ""),
-                            description=item.get("jobDescription", ""),
-                            location=item.get("placeholders", [{}])[0].get("label", "India")
-                            if item.get("placeholders") else "India",
-                            salary_raw=salary_text or None,
-                            salary_min_inr=sal_min,
-                            salary_max_inr=sal_max,
-                            salary_currency="INR",
-                            experience_min_years=exp_min,
-                            experience_max_years=exp_max,
-                            experience_raw=exp_text or None,
-                            required_skills=skills,
-                            employment_type="Full-time",
-                            source_job_id=item.get("jobId", ""),
-                            raw_data=item,
-                        )
-                        jobs.append(job)
-
-                    await asyncio.sleep(1.5)
-
-                except Exception as e:
-                    logger.warning(f"Naukri error for '{query}': {e!r}")
-
-                if len(jobs) >= self.max_jobs:
-                    break
-
-        return jobs
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -291,3 +189,4 @@ def _parse_experience(exp_text: str) -> tuple:
             pass
 
     return None, None
+

@@ -12,7 +12,8 @@ import respx
 
 from app.sources.base import RawJob
 from app.sources.job_boards import RemoteOKSource, ArbeitnowSource
-from app.sources.company_careers import _parse_lpa_salary, _parse_experience, NaukriSource
+from app.sources.company_careers import _parse_lpa_salary, _parse_experience
+from app.sources.naukri import NaukriSource
 
 
 SAMPLE_PREFERENCES = {

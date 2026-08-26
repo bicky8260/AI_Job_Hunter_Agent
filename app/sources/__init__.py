@@ -9,7 +9,8 @@ from app.sources.job_boards import (
     RemoteOKSource,
     TheMuseSource,
 )
-from app.sources.company_careers import CompanyCareersSource, NaukriSource
+from app.sources.company_careers import CompanyCareersSource
+from app.sources.naukri import NaukriSource
 from app.sources.linkedin_discovery import LinkedInDiscoverySource
 from app.sources.public_search import PublicSearchSource
 

@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------
     llm_provider: str = Field(default="mock", description="gemini | openai | mock")
     gemini_api_key: str = Field(default="")
-    gemini_model: str = Field(default="gemini-1.5-flash")
+    gemini_model: str = Field(default="gemini-2.5-flash")
     openai_api_key: str = Field(default="")
     openai_model: str = Field(default="gpt-4o-mini")
 

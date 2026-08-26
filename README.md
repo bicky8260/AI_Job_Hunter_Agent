@@ -10,7 +10,7 @@ A production-quality personal job-search agent that runs daily, searches multipl
 |---|---|
 | 🤖 **AI Matching** | LLM-powered semantic skill matching (GKE ↔ Kubernetes, Terraform ↔ IaC) |
 | 📊 **0-100 Scoring** | Intelligent scoring across 6 dimensions |
-| 🔎 **Multi-Source** | RemoteOK, Naukri, Arbeitnow, Adzuna, Jooble, LinkedIn URL discovery |
+| 🔎 **Multi-Source** | RemoteOK, Naukri (best-effort), Arbeitnow, Adzuna, Jooble, LinkedIn URL discovery |
 | 🔄 **Deduplication** | Canonical hash + URL matching prevents duplicate emails |
 | 📅 **Daily Schedule** | Automatically runs at 9:00 AM IST (configurable) |
 | ▶/⏹ **START/STOP** | Full agent control with database preservation |
@@ -136,7 +136,25 @@ Copy `.env.example` to `.env` and configure:
 | `JOOBLE_API_KEY` | [jooble.org/api/about](https://jooble.org/api/about) — Free |
 | `SERPAPI_KEY` | [serpapi.com](https://serpapi.com) — Paid ($50/mo) for LinkedIn URL discovery |
 
+> **Naukri.com** — No API key is required or available. See the [Naukri Integration Notes](#naukri-integration-notes) section below.
+
 ---
+
+## ⚠️ Naukri Integration Notes
+
+Naukri.com is India's largest job board and is included as a source. However:
+
+- **No authorized public API exists.** Naukri does not provide an API key program for independent developers. Enterprise integrations are only available through direct Naukri account management.
+- **Best-effort access only.** `NaukriSource` makes honest GET requests to Naukri's public search endpoint using a transparent `User-Agent` that identifies this tool. It does not spoof browser fingerprints, harvest session cookies, or attempt to bypass bot protection.
+- **Graceful failure.** If Naukri returns an access-denied response (4xx), the source logs a warning and returns an empty result. **The agent continues running normally using all other sources.** No configuration change is needed.
+- **Do not add Naukri credentials to `.env`.** None are supported.
+
+| Scenario | Behaviour |
+|---|---|
+| Naukri returns 200 OK | Jobs are parsed and included |
+| Naukri returns 403/406 (bot block) | Logs warning, returns `[]`, agent continues |
+| Naukri returns 5xx (server error) | Retries up to 2×, then returns `[]` |
+| Network timeout | Retries up to 2×, then returns `[]` |
 
 ## 📋 Job Preferences
 
