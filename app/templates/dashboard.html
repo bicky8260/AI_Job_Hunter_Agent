@@ -525,6 +525,197 @@
     .toast.error   { border-left: 3px solid var(--accent-red); }
     .toast.info    { border-left: 3px solid var(--accent-blue); }
 
+    /* Agentic AI Companion Widget (Fixed Bottom-Right Footer, Unhidden) */
+    .agent-companion {
+      position: fixed;
+      bottom: 20px;
+      right: 28px;
+      z-index: 9999;
+      pointer-events: auto;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* Reacting State: Playful bounce & scale */
+    .agent-companion.reacting {
+      transform: translateY(-8px) scale(1.05);
+    }
+
+    .agent-avatar-wrap {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .agent-antenna {
+      width: 2px;
+      height: 14px;
+      background: #38bdf8;
+      position: relative;
+      box-shadow: 0 0 8px #38bdf8;
+      border-radius: 2px;
+      z-index: 2;
+    }
+
+    .antenna-orb {
+      position: absolute;
+      top: -7px;
+      left: -4px;
+      width: 10px;
+      height: 10px;
+      background: #38bdf8;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #38bdf8, 0 0 20px #38bdf8;
+      animation: orbPulse 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes orbPulse {
+      0% { transform: scale(0.85); box-shadow: 0 0 6px #38bdf8; }
+      100% { transform: scale(1.2); box-shadow: 0 0 16px #38bdf8, 0 0 24px #38bdf8; }
+    }
+
+    /* Head Container: Unhidden, full 54px head visible */
+    .agent-head-mask {
+      width: 64px;
+      height: 54px;
+      overflow: visible;
+      border-radius: 20px 20px 0 0;
+    }
+
+
+
+
+
+    .agent-head {
+      width: 64px;
+      height: 52px;
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border: 2px solid #38bdf8;
+      border-radius: 26px 26px 20px 20px;
+      position: relative;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5), inset 0 2px 6px rgba(255,255,255,0.1);
+      overflow: hidden;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .agent-companion.reacting .agent-head {
+      border-color: #f43f5e;
+      box-shadow: 0 0 20px rgba(244, 63, 94, 0.4);
+    }
+
+    .agent-face {
+      position: absolute;
+      top: 10px;
+      left: 8px;
+      width: 48px;
+      height: 28px;
+      background: #020617;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 6px;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
+    }
+
+    .agent-eye {
+      width: 16px;
+      height: 16px;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1.5px solid #38bdf8;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 0 6px rgba(56, 189, 248, 0.5);
+    }
+
+    .agent-pupil {
+      width: 6px;
+      height: 6px;
+      background: #38bdf8;
+      border-radius: 50%;
+      box-shadow: 0 0 6px #38bdf8;
+      transition: transform 0.08s ease-out;
+    }
+
+    .agent-blush {
+      position: absolute;
+      bottom: 12px;
+      width: 8px;
+      height: 4px;
+      background: rgba(244, 63, 94, 0.4);
+      border-radius: 50%;
+      filter: blur(1px);
+    }
+    .agent-blush.left { left: 8px; }
+    .agent-blush.right { right: 8px; }
+
+    .agent-mouth {
+      position: absolute;
+      bottom: 8px;
+      left: 26px;
+      width: 12px;
+      height: 6px;
+      border-bottom: 2px solid #38bdf8;
+      border-radius: 0 0 6px 6px;
+      transition: all 0.2s;
+    }
+
+    .agent-companion.reacting .agent-mouth {
+      width: 14px;
+      height: 8px;
+      background: #f43f5e;
+      border-bottom: none;
+      border-radius: 50%;
+    }
+
+    .agent-bubble {
+      position: absolute;
+      top: -46px;
+      right: 0;
+      z-index: 25;
+      white-space: nowrap;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #e0f2fe;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5), 0 0 15px rgba(56, 189, 248, 0.25);
+      opacity: 0;
+      transform: translateY(6px) scale(0.95);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      pointer-events: none;
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+
+
+    .agent-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      right: 28px;
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 6px solid rgba(15, 23, 42, 0.95);
+    }
+
+    .agent-bubble.active {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
       .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
@@ -537,6 +728,7 @@
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
   </style>
+
 </head>
 
 <body>
@@ -544,8 +736,36 @@
 <!-- Toast container -->
 <div class="toast-container" id="toastContainer"></div>
 
+<!-- Agentic Companion Character Widget -->
+<!-- Agentic Companion Character Widget (Unhidden at Bottom-Right Footer) -->
+<div id="agentCompanion" class="agent-companion">
+  <div class="agent-bubble" id="agentBubble">Watching your job search... 👁️</div>
+  <div class="agent-avatar-wrap" onclick="agentReact('Poked me! 🤖✨')">
+    <div class="agent-antenna">
+      <div class="antenna-orb"></div>
+    </div>
+    <div class="agent-head-mask">
+      <div class="agent-head">
+        <div class="agent-face">
+          <div class="agent-eye left-eye">
+            <div class="agent-pupil" id="pupilLeft"></div>
+          </div>
+          <div class="agent-eye right-eye">
+            <div class="agent-pupil" id="pupilRight"></div>
+          </div>
+        </div>
+        <div class="agent-blush left"></div>
+        <div class="agent-blush right"></div>
+        <div class="agent-mouth" id="agentMouth"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <!-- Header -->
 <header>
+
   <div class="container header-inner">
     <div class="logo">
       <div class="logo-icon">🎯</div>
@@ -654,8 +874,9 @@
     </div>
 
     <!-- Recent Jobs -->
-    <div style="margin-bottom:24px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+    <div style="margin-bottom:24px;" id="recentJobsSection">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-right:75px;flex-wrap:wrap;gap:8px;">
+
         <div class="section-title" style="margin-bottom:0;">📋 Recent Matching Jobs</div>
         <div class="btn-row" style="gap:6px;">
           <button id="btnFilter70" class="btn btn-ghost active" style="padding:4px 12px;font-size:11px;" onclick="setScoreFilter(70)">Matched Jobs</button>
@@ -758,10 +979,13 @@
     document.getElementById('btnSearch').disabled = !agentEnabled || searchRunning;
 
     if (searchRunning) {
+      document.getElementById('btnSearch').disabled = true;
       document.getElementById('btnSearch').innerHTML = '<span class="spinner"></span> Searching...';
     } else {
+      document.getElementById('btnSearch').disabled = false;
       document.getElementById('btnSearch').innerHTML = '🔍 Search Now';
     }
+
 
     // Stats
     document.getElementById('statTotal').textContent = status.total_jobs_tracked || 0;
@@ -1048,8 +1272,9 @@
   }
 
   async function triggerSearch() {
-    document.getElementById('btnSearch').disabled = true;
-    document.getElementById('btnSearch').innerHTML = '<span class="spinner"></span> Searching...';
+    const btnSearch = document.getElementById('btnSearch');
+    btnSearch.disabled = true;
+    btnSearch.innerHTML = '<span class="spinner"></span> Searching...';
     addLog('Manual search triggered — searching all sources...', 'info');
 
     try {
@@ -1059,23 +1284,30 @@
 
       // Poll for completion
       const pollInterval = setInterval(async () => {
-        const status = await api('GET', '/agent/status');
-        updateUI(status);
-        if (!status.search_running) {
-          clearInterval(pollInterval);
-          addLog('Search completed! Reloading jobs...', 'success');
-          await loadJobs(true);
-          showToast('Search complete! Check your email.', 'success');
+        try {
+          const status = await api('GET', '/agent/status');
+          updateUI(status);
+          if (!status.search_running) {
+            clearInterval(pollInterval);
+            addLog('Search completed! Reloading jobs...', 'success');
+            await loadJobs(true);
+            showToast('Search complete!', 'success');
+            btnSearch.disabled = false;
+            btnSearch.innerHTML = '🔍 Search Now';
+          }
+        } catch (pollErr) {
+          console.error('Error polling search status:', pollErr);
         }
       }, 3000);
 
     } catch (e) {
       showToast(e.message || 'Search failed', 'error');
       addLog('Search failed: ' + e.message, 'error');
-      document.getElementById('btnSearch').disabled = false;
-      document.getElementById('btnSearch').innerHTML = '🔍 Search Now';
+      btnSearch.disabled = false;
+      btnSearch.innerHTML = '🔍 Search Now';
     }
   }
+
 
   async function sendTestEmail() {
     addLog('Sending test email...', 'info');
@@ -1092,15 +1324,131 @@
     }
   }
 
+  // ─── Agent Companion Interaction ──────────────────────────────────────────
+  // Real-time cursor tracking for pupils
+  document.addEventListener('mousemove', (e) => {
+    const companion = document.getElementById('agentCompanion');
+    if (!companion) return;
+
+    const leftPupil = document.getElementById('pupilLeft');
+    const rightPupil = document.getElementById('pupilRight');
+
+    const rect = companion.getBoundingClientRect();
+    const eyeCenterX = rect.left + rect.width / 2;
+    const eyeCenterY = rect.top + rect.height / 2;
+
+    const deltaX = e.clientX - eyeCenterX;
+    const deltaY = e.clientY - eyeCenterY;
+
+    const angle = Math.atan2(deltaY, deltaX);
+    const distance = Math.min(4.5, Math.hypot(deltaX, deltaY) / 45);
+
+    const pupilX = Math.cos(angle) * distance;
+    const pupilY = Math.sin(angle) * distance;
+
+    if (leftPupil) leftPupil.style.transform = `translate(${pupilX}px, ${pupilY}px)`;
+    if (rightPupil) rightPupil.style.transform = `translate(${pupilX}px, ${pupilY}px)`;
+  });
+
+  // Reaction state
+  let reactionTimer = null;
+  function agentReact(message) {
+    const companion = document.getElementById('agentCompanion');
+    const bubble = document.getElementById('agentBubble');
+    if (!companion || !bubble) return;
+
+    companion.classList.add('reacting');
+    bubble.textContent = message;
+    bubble.classList.add('active');
+
+    if (reactionTimer) clearTimeout(reactionTimer);
+
+    // Fallback reset reaction after 2.5 seconds
+    reactionTimer = setTimeout(() => {
+      agentDuck();
+    }, 2500);
+  }
+
+  // Instant Reset on mouseleave
+  function agentDuck() {
+    const companion = document.getElementById('agentCompanion');
+    const bubble = document.getElementById('agentBubble');
+    if (!companion || !bubble) return;
+
+    if (reactionTimer) {
+      clearTimeout(reactionTimer);
+      reactionTimer = null;
+    }
+
+    companion.classList.remove('reacting');
+    bubble.classList.remove('active');
+  }
+
+
+  // Hover & overview observers
+  function initAgentObservers() {
+    const attachHover = (selector, messages) => {
+      document.querySelectorAll(selector).forEach(el => {
+        if (el.dataset.hasAgentObs) return;
+        el.dataset.hasAgentObs = 'true';
+
+        el.addEventListener('mouseenter', () => {
+          const msg = Array.isArray(messages)
+            ? messages[Math.floor(Math.random() * messages.length)]
+            : messages;
+          agentReact(msg);
+        });
+
+        // Hide back down as soon as mouse leaves card
+        el.addEventListener('mouseleave', () => {
+          agentDuck();
+        });
+      });
+    };
+
+    attachHover('.job-item', [
+      'Ooh! Inspecting this job role... 💼',
+      'Checking match score & details! 🎯',
+      'Curious about this opportunity? 🏢',
+      'Evaluating location & pay... 💰'
+    ]);
+
+    attachHover('#btnSearch', [
+      'Ready to hunt fresh jobs? 🔎',
+      'Click to scan all job boards! 🚀'
+    ]);
+
+    attachHover('#btnStart, #btnStop', [
+      'Managing automated agent state! ⚙️'
+    ]);
+
+    attachHover('.upload-zone, #btnReupload', [
+      'Updating your resume profile? 📄',
+      'New resume = updated AI scores! ✨'
+    ]);
+
+    attachHover('#btnFilter70, #btnFilter0', [
+      'Filtering match scores! 📊'
+    ]);
+
+    attachHover('.stat-card', [
+      'Overviewing job search stats! 📈'
+    ]);
+  }
+
   // ─── Init ─────────────────────────────────────────────────────────────────
   async function init() {
     await Promise.all([loadStatus(), loadPreferences(), loadResume(), loadJobs(true)]);
     addLog('Dashboard ready', 'success');
+    initAgentObservers();
+    setInterval(initAgentObservers, 2000);
     // Refresh status every 30s
     setInterval(loadStatus, 30000);
   }
 
   init();
+
+
 </script>
 
 </body>

@@ -5,9 +5,9 @@ All external HTTP calls are mocked — no real API calls.
 import json
 import pytest
 import pytest_asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
-
+from datetime import datetime, timezone
 import httpx
+
 import respx
 
 from app.sources.base import RawJob
@@ -39,6 +39,7 @@ class TestRemoteOKSource:
     @respx.mock
     async def test_search_returns_devops_jobs(self):
         """RemoteOK returns jobs with relevant tags."""
+        now_iso = datetime.now(timezone.utc).isoformat()
         mock_data = [
             {"legal": True},  # Skip this
             {
@@ -50,7 +51,7 @@ class TestRemoteOKSource:
                 "url": "https://remoteok.com/jobs/1001",
                 "apply_url": "https://remoteok.com/apply/1001",
                 "description": "<p>We need a DevOps Engineer with K8s experience</p>",
-                "date": "2026-08-20T00:00:00Z",
+                "date": now_iso,
             },
             {
                 "id": 1002,
@@ -59,9 +60,10 @@ class TestRemoteOKSource:
                 "tags": ["marketing"],
                 "location": "Remote",
                 "url": "https://remoteok.com/jobs/1002",
-                "date": "2026-08-20T00:00:00Z",
+                "date": now_iso,
             },
         ]
+
 
         respx.get("https://remoteok.com/api").mock(
             return_value=httpx.Response(200, json=mock_data)
