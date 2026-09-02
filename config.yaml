@@ -108,6 +108,9 @@ search_settings:
   # How many days back to look for jobs (per source)
   max_job_age_days: 7
 
+  # How many days to retain jobs and search runs in the database before automatic deletion
+  job_retention_days: 10
+
   # Maximum jobs to process per search run (per source)
   max_jobs_per_source: 50
 

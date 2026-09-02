@@ -98,14 +98,18 @@ class NaukriSource(JobSource):
         queries = self.build_search_queries()[:4]
         search_locations = self._resolve_locations()
 
+        self._blocked = False
         async with httpx.AsyncClient(
             timeout=self.request_timeout,
             follow_redirects=True,
+            verify=False,
             headers={"User-Agent": self._USER_AGENT},
         ) as client:
             for query in queries:
+                if self._blocked:
+                    break
                 for location in search_locations:
-                    if len(jobs) >= self.max_jobs:
+                    if len(jobs) >= self.max_jobs or self._blocked:
                         break
 
                     raw_items = await self._fetch(
@@ -189,8 +193,9 @@ class NaukriSource(JobSource):
                     # Access denied — do not retry; that would be evasion.
                     logger.warning(
                         f"Naukri: access denied ({resp.status_code}) for "
-                        f"'{query}' @ {location} — skipping (no authorized API available)"
+                        f"'{query}' @ {location} — skipping remaining Naukri requests (no authorized API available)"
                     )
+                    self._blocked = True
                     return []
 
                 if resp.status_code in _TRANSIENT_STATUS_CODES:

@@ -235,6 +235,10 @@ async def save_job_to_db(db_session, job: RawJob, canonical_id: str) -> Optional
             return db_job
     except Exception as e:
         logger.warning(f"Failed to save job '{job.title}': {e!r}")
+        try:
+            await db_session.rollback()
+        except Exception:
+            pass
         result = await db_session.execute(
             select(Job).where(Job.canonical_id == canonical_id)
         )
@@ -243,11 +247,11 @@ async def save_job_to_db(db_session, job: RawJob, canonical_id: str) -> Optional
 
 async def save_match_to_db(db_session, job_id: str, match_result: Dict[str, Any]) -> None:
     """Save match score and reasoning to database using savepoint."""
-    existing = (await db_session.execute(select(JobMatch).where(JobMatch.job_id == job_id))).scalar_one_or_none()
-    if existing:
-        return
-
     try:
+        existing = (await db_session.execute(select(JobMatch).where(JobMatch.job_id == job_id))).scalar_one_or_none()
+        if existing:
+            return
+
         async with db_session.begin_nested():
             match = JobMatch(
                 job_id=job_id,
@@ -268,6 +272,10 @@ async def save_match_to_db(db_session, job_id: str, match_result: Dict[str, Any]
             await db_session.flush()
     except Exception as e:
         logger.warning(f"Failed to save match for job {job_id}: {e!r}")
+        try:
+            await db_session.rollback()
+        except Exception:
+            pass
 
 
 
@@ -313,6 +321,13 @@ class JobAgent:
 
 
             logger.info(f"=== Job search run started (triggered_by={triggered_by}) ===")
+
+            # Purge data older than retention threshold (default 10 days)
+            try:
+                from app.database.cleanup import cleanup_expired_data
+                await cleanup_expired_data(db)
+            except Exception as cleanup_err:
+                logger.warning(f"Retention cleanup warning: {cleanup_err!r}")
 
             # ------------------------------------------------------------------
             # 2. Create SearchRun record

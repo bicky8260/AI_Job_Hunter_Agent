@@ -800,6 +800,9 @@
         <button class="btn btn-ghost" onclick="sendTestEmail()">
           📧 Test Email
         </button>
+        <button class="btn btn-ghost" id="btnCleanup" onclick="triggerCleanup()" title="Purge jobs older than 10 days">
+          🧹 Purge 10d+ Data
+        </button>
       </div>
     </div>
 
@@ -1291,6 +1294,7 @@
             clearInterval(pollInterval);
             addLog('Search completed! Reloading jobs...', 'success');
             await loadJobs(true);
+            addLog(`Jobs reloaded — ${totalMatchingJobs} total jobs found`, 'success');
             showToast('Search complete!', 'success');
             btnSearch.disabled = false;
             btnSearch.innerHTML = '🔍 Search Now';
@@ -1321,6 +1325,25 @@
       }
     } catch (e) {
       showToast('Test email failed', 'error');
+    }
+  }
+
+  async function triggerCleanup() {
+    if (!confirm('Purge jobs and search logs older than 10 days?')) return;
+    addLog('Executing 10-day retention cleanup...', 'info');
+    try {
+      const data = await api('POST', '/agent/cleanup');
+      if (data.status === 'success') {
+        const msg = `Cleanup complete: purged ${data.deleted_jobs} old jobs & ${data.deleted_runs} old search runs.`;
+        showToast(msg, 'success');
+        addLog(msg, 'success');
+        await loadJobs(true);
+        await loadStatus();
+      } else {
+        showToast('Cleanup error: ' + (data.error || 'Failed'), 'error');
+      }
+    } catch (e) {
+      showToast('Cleanup failed: ' + e.message, 'error');
     }
   }
 

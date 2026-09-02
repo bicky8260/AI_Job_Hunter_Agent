@@ -175,21 +175,28 @@ async def send_job_email(
     # Send via SMTP
     try:
         import ssl
-        import certifi
-        # macOS needs explicit SSL context pointing to certifi CA bundle
-        ssl_context = ssl.create_default_context(cafile=certifi.where())
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
 
         password = settings.email_password.replace(" ", "") if settings.email_password else ""
 
-        await aiosmtplib.send(
-            msg,
-            hostname=settings.email_host,
-            port=settings.email_port,
-            username=settings.email_username,
-            password=password,
-            use_tls=False,
-            start_tls=True,
-            tls_context=ssl_context,
+        use_tls = (settings.email_port == 465)
+        start_tls = not use_tls
+
+        await asyncio.wait_for(
+            aiosmtplib.send(
+                msg,
+                hostname=settings.email_host,
+                port=settings.email_port,
+                username=settings.email_username,
+                password=password,
+                use_tls=use_tls,
+                start_tls=start_tls,
+                tls_context=ssl_context,
+                timeout=15.0,
+            ),
+            timeout=15.0,
         )
 
         logger.info(f"Email sent successfully: '{subject}' to {settings.email_to}")

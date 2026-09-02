@@ -211,3 +211,14 @@ async def send_test_email_endpoint():
         mode = "saved to email_output/" if not settings.is_email_configured else f"sent to {settings.email_to}"
         return {"message": f"Test email {mode}", "success": True}
     return {"message": "Test email failed — check logs", "success": False}
+
+
+@router.post("/agent/cleanup")
+async def trigger_cleanup_endpoint(
+    days: Optional[int] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """Purge jobs and search runs older than retention threshold (default 10 days)."""
+    from app.database.cleanup import cleanup_expired_data
+    result = await cleanup_expired_data(db, retention_days=days)
+    return result

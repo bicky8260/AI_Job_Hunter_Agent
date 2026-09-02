@@ -38,7 +38,7 @@ class RemoteOKSource(JobSource):
     async def search(self) -> List[RawJob]:
         jobs: List[RawJob] = []
         try:
-            async with httpx.AsyncClient(timeout=self.request_timeout) as client:
+            async with httpx.AsyncClient(timeout=self.request_timeout, verify=False) as client:
                 resp = await client.get(
                     self.BASE_URL,
                     headers={"User-Agent": "AI-Job-Hunter/1.0 (personal job search tool)"},
@@ -122,7 +122,7 @@ class ArbeitnowSource(JobSource):
     async def search(self) -> List[RawJob]:
         jobs: List[RawJob] = []
         try:
-            async with httpx.AsyncClient(timeout=self.request_timeout) as client:
+            async with httpx.AsyncClient(timeout=self.request_timeout, verify=False) as client:
                 for page in range(1, 4):  # fetch up to 3 pages
                     resp = await client.get(
                         self.BASE_URL,
@@ -214,7 +214,7 @@ class AdzunaSource(JobSource):
         queries = self.build_search_queries()
         countries = self.search_settings.get("country_codes", ["in"])
 
-        async with httpx.AsyncClient(timeout=self.request_timeout) as client:
+        async with httpx.AsyncClient(timeout=self.request_timeout, verify=False) as client:
             for country in countries[:1]:  # prioritize India
                 for query in queries[:3]:
                     try:
@@ -303,7 +303,7 @@ class JoobleSource(JobSource):
         jobs: List[RawJob] = []
         queries = self.build_search_queries()
 
-        async with httpx.AsyncClient(timeout=self.request_timeout) as client:
+        async with httpx.AsyncClient(timeout=self.request_timeout, verify=False) as client:
             for query in queries[:3]:
                 try:
                     resp = await client.post(
@@ -374,7 +374,7 @@ class TheMuseSource(JobSource):
     async def search(self) -> List[RawJob]:
         jobs: List[RawJob] = []
         try:
-            async with httpx.AsyncClient(timeout=self.request_timeout) as client:
+            async with httpx.AsyncClient(timeout=self.request_timeout, verify=False) as client:
                 for page in range(1, 4):
                     resp = await client.get(
                         self.BASE_URL,

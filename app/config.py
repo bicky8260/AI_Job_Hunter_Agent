@@ -72,8 +72,9 @@ class Settings(BaseSettings):
     scheduler_hour: int = Field(default=9)
     scheduler_minute: int = Field(default=0)
 
-    # Matching
+    # Matching & Retention
     min_match_score: int = Field(default=70)
+    job_retention_days: int = Field(default=10, description="Days after which jobs and runs are deleted")
 
     # File paths
     upload_dir: str = Field(default="uploads")

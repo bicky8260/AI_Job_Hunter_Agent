@@ -54,7 +54,7 @@ class LinkedInDiscoverySource(JobSource):
         jobs: List[RawJob] = []
         queries = self.build_search_queries()
 
-        async with httpx.AsyncClient(timeout=self.request_timeout) as client:
+        async with httpx.AsyncClient(timeout=self.request_timeout, verify=False) as client:
             for query in queries[:3]:
                 try:
                     results = await self._search_google(client, query)

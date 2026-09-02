@@ -48,6 +48,7 @@ class PublicSearchSource(JobSource):
 
         async with httpx.AsyncClient(
             timeout=self.request_timeout,
+            verify=False,
             headers={
                 "User-Agent": (
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -172,7 +173,7 @@ class FreelancerJobSource(JobSource):
 
         jobs = []
         try:
-            async with httpx.AsyncClient(timeout=self.request_timeout) as client:
+            async with httpx.AsyncClient(timeout=self.request_timeout, verify=False) as client:
                 resp = await client.get(
                     self.BASE_URL,
                     params={

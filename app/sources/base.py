@@ -62,6 +62,10 @@ class RawJob:
     source_job_id: Optional[str] = None
     raw_data: Optional[Dict[str, Any]] = None
 
+    def __post_init__(self):
+        if self.source_job_id is not None:
+            self.source_job_id = str(self.source_job_id)
+
     def __repr__(self) -> str:
         return f"RawJob(title={self.title!r}, company={self.company!r}, source={self.source!r})"
 

@@ -80,12 +80,8 @@ class GeminiProvider(LLMProvider):
             response = await loop.run_in_executor(None, model.generate_content, prompt)
             return response.text or ""
         except Exception as e:
-            err_str = str(e)
-            if any(k in err_str for k in ("ResourceExhausted", "Quota", "429", "PermissionDenied", "API key")):
-                logger.warning(f"Gemini API rate-limited or key issue: {e!r}. Disabling LLM for remaining jobs in this run (using rule-based scoring).")
-                self._disabled = True
-            else:
-                logger.warning(f"Gemini completion failed: {e!r}")
+            logger.warning(f"Gemini LLM error ({e!r}). Disabling LLM for remaining jobs in this run (using rule-based scoring).")
+            self._disabled = True
             return ""
 
 

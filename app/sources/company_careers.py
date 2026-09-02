@@ -40,6 +40,7 @@ class CompanyCareersSource(JobSource):
 
         async with httpx.AsyncClient(
             timeout=self.request_timeout,
+            verify=False,
             headers={
                 "User-Agent": (
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
